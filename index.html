@@ -80,9 +80,9 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 40px}
 <span class="count" id="count"></span>
 </div>
 </div>
-<div class="legend"><span><i style="background:#2D7DD2"></i>台北・天空藍</span><span><i style="background:#1F8A5B"></i>新北・草地綠</span><span><i style="background:#184E77"></i>基隆・海洋藍</span><span><i style="background:#C08A2D"></i>桃園・梯田金</span></div>
+<div class="legend"><span><i style="background:#2D7DD2"></i>台北</span><span><i style="background:#1F8A5B"></i>新北</span><span><i style="background:#184E77"></i>基隆</span><span><i style="background:#C08A2D"></i>桃園</span></div>
 <div class="grid" id="grid"></div>
-<footer>天母公園、花博照片：臺北市政府（政府網站資料開放宣告，需註明出處）・希望之丘照片：基隆市文化觀光局（政府資料開放授權條款第1版）・其餘代表圖為放電地圖公園徽章・介紹連結版權屬原作者・座標部分為 OSM 近似定位，出發前請以 Google 導航為準<br><span class="src">資料來源：家庭 Google Sheet（2026-09-29）</span></footer>
+<footer>天母、花博照片：臺北市政府・希望之丘照片：基隆市文化觀光局（以上政府開放授權）・座標為近似定位，出發前請以 Google 導航為準</footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const PARKS=[
@@ -131,7 +131,7 @@ return `<div class="card" data-i="${i}"><div>${ph}</div><div class="body">
 function render(f){
 const idx=PARKS.map((p,i)=>i).filter(i=>f==="全部"||PARKS[i].city===f);
 grid.innerHTML=idx.map(i=>card(PARKS[i],i)).join('');
-count.textContent=`共 ${idx.length} 座・點卡片「導航」直接出發`;
+count.textContent=`共 ${idx.length} 座`;
 Object.values(markers).forEach(m=>m.remove());
 idx.forEach(i=>markers[i].addTo(map));
 if(idx.length){const g=L.featureGroup(idx.map(i=>markers[i]));map.fitBounds(g.getBounds().pad(0.15));}}
