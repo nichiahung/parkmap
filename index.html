@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北北基桃特色公園放電地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#FAF5EF;--ink:#232323;--mut:#6E6257;--brand:#E85A24;--brand2:#1F8A5B;--card:#fff;--line:#EADFCB;--tint:#FFF6E8}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:clip}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+img{max-width:100%}
+header{padding:28px 20px 8px;text-align:center}
+header h1{margin:0;font-size:clamp(22px,4vw,34px);letter-spacing:-.02em;text-wrap:balance}
+.mark{width:1.6em;height:1.6em;vertical-align:-.32em;border-radius:22%}
+::selection{background:#FFE0C7;color:#20302A}
+a:focus-visible,button:focus-visible{outline:3px solid #1F8A5B;outline-offset:2px;border-radius:8px}
+::-webkit-scrollbar{width:12px}::-webkit-scrollbar-thumb{background:#D8CBB2;border-radius:8px;border:3px solid var(--bg)}
+header p{color:var(--mut);margin:8px 0 0}
+#map{height:52vh;min-height:340px;margin:16px auto;max-width:1080px;border-radius:18px;border:1px solid var(--line);overflow:hidden}
+@media(max-width:640px){#map{height:44vh;min-height:260px;margin:12px 12px 0}.toolbar{flex-wrap:nowrap;overflow-x:auto;padding:12px 12px 4px;margin:0}.toolbar button{flex:none}.grid{grid-template-columns:minmax(0,1fr);padding:0 12px}}
+.toolbar{max-width:1080px;margin:0 auto;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mapwrap{position:relative;max-width:1080px;margin:16px auto}
+.mapwrap #map{margin:0}
+.mapwrap .toolbar{position:absolute;left:12px;right:12px;bottom:12px;z-index:500;margin:0;padding:10px 12px;max-width:none;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-radius:16px;box-shadow:0 4px 16px rgba(32,48,42,.18);flex-wrap:nowrap;overflow-x:auto}
+.mapwrap .toolbar button{flex:none;padding:8px 16px;font-size:14px}
+@media(max-width:640px){.mapwrap{margin:12px 12px 0}}
+.toolbar button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:10px 18px;font-size:15px;cursor:pointer;transition:background .2s,border-color .2s}@media(hover:hover){.toolbar button:hover{border-color:var(--ink)}}
+.toolbar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.count{color:var(--mut);font-size:14px;margin-left:auto}
+.grid{max-width:1080px;margin:14px auto 60px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s cubic-bezier(.2,.7,.2,1)}
+@media(hover:hover){.card:hover{transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(32,48,42,.45)}}
+.card img.ph{width:100%;height:190px;object-fit:cover;background:#F6EEDF;display:block}.card img.ph.badge-ph{object-fit:contain;background:#FFF6E8;padding:10px}
+.ph-fallback{height:190px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFE3C2,#CFE9D8)}.ph-fallback svg{width:64px;height:64px;color:var(--brand)}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.meta{overflow-wrap:anywhere}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;border-radius:999px;padding:3px 10px;background:#FFF1E2;border:1px solid var(--line)}
+.tag.age{background:#E8FAF7;border-color:#BDE8E2}
+.tag[class*=city-]{display:inline-flex;align-items:center;gap:6px}
+.tag[class*=city-]::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.tag.city-台北{--c:#2D7DD2;background:#DCEBF9;border-color:#B9D6F0;color:#174A7C}
+.tag.city-新北{--c:#1F8A5B;background:#DDF0E4;border-color:#B7E0C6;color:#14532D}
+.tag.city-基隆{--c:#184E77;background:#D9E9F2;border-color:#B4D2E4;color:#123F5C}
+.tag.city-桃園{--c:#C08A2D;background:#F3E6C8;border-color:#E3C98F;color:#6B4A12}
+.pin{display:block;width:26px;height:26px;background:var(--pc);border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(32,48,42,.45);position:relative}
+.pin::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;border-radius:50%}
+.badge{width:36px;height:36px;flex:none;border-radius:50%;background:var(--bc,#E85A24);display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 2px 6px rgba(32,48,42,.25)}
+.badge svg{width:27px;height:27px}
+.badge img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.legend{max-width:1080px;margin:10px auto 0;padding:0 20px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h2{font-size:20px;margin:2px 0;font-weight:800;letter-spacing:0}
+.kid{background:var(--tint);border:1px solid #F3DCC2;padding:10px 12px;border-radius:12px;font-size:14.5px;line-height:1.65}
+.spec{display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #E2D9C4;font-size:13.5px;line-height:1.7}
+.spec:last-of-type{border-bottom:0}
+.spec b{flex:none;color:var(--ink);font-weight:800}
+.spec span{color:#4D463C}
+.btns{margin-top:auto;display:flex;gap:8px;padding-top:6px;min-width:0}
+.btns a{flex:1 1 0;min-width:0;text-align:center;text-decoration:none;border-radius:10px;padding:9px 8px;font-size:14px;font-weight:700;transition:filter .2s,background .2s}@media(hover:hover){.a1:hover{filter:brightness(.94)}.a2:hover{background:#EFF6F1}}
+.a1{background:var(--brand);color:#fff}.a2{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
+footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 40px}
+.src{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+<h1><img class="mark" src="logo/logo-final.png" alt="放電地圖 logo"> 北北基桃特色公園放電地圖</h1>
+<p>19座・小朋友視角・點釘導航 — 3 張官方照片＋16 張公園徽章・資料來源：家庭 Google Sheet（2026-09-29）</p>
+</header>
+<div class="mapwrap"><div id="map"></div>
+<div class="toolbar" id="toolbar">
+<button data-c="全部" class="on">全部</button>
+<button data-c="台北">台北</button>
+<button data-c="新北">新北</button>
+<button data-c="基隆">基隆</button>
+<button data-c="桃園">桃園</button>
+<span class="count" id="count"></span>
+</div>
+</div>
+<div class="legend"><span><i style="background:#2D7DD2"></i>台北・天空藍</span><span><i style="background:#1F8A5B"></i>新北・草地綠</span><span><i style="background:#184E77"></i>基隆・海洋藍</span><span><i style="background:#C08A2D"></i>桃園・梯田金</span></div>
+<div class="grid" id="grid"></div>
+<footer>天母公園、花博照片：臺北市政府（政府網站資料開放宣告，需註明出處）・希望之丘照片：基隆市文化觀光局（政府資料開放授權條款第1版）・其餘代表圖為放電地圖公園徽章・介紹連結版權屬原作者・座標部分為 OSM 近似定位，出發前請以 Google 導航為準<br><span class="src">資料來源：家庭 Google Sheet（2026-09-29）</span></footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PARKS=[
+{city:"台北",dist:"士林",name:"天母公園",addr:"中山北路七段141巷旁(天母公園內)",lat:25.1261909,lng:121.5308225,kid:"海芋造型的山丘遊戲場！可以爬上去再咻一下溜下來，還有可以好多人一起跳的長長彈跳床",toys:"攀爬滑梯組、磨石子滑梯、擺盪繩、長形彈跳床、沙坑",age:"2-12歲",tip:"捷運石牌站轉公車；礫石/沙坑/草皮，玩完記得洗手",info:"https://play4u.gov.taipei/News_Content.aspx?n=4773608F226124D4&s=1D446894A971687F&sms=7B56BA5392EB632C",nav:"https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E5%A3%AB%E6%9E%97%E5%8D%80%E5%A4%A9%E6%AF%8D%E5%85%AC%E5%9C%92",img:"photos/tianmu.jpg"},
+{city:"台北",dist:"中山",name:"花博公園美術園區(舞蝶共融遊戲場)",addr:"中山北路以東、民族東路以北(原民族公園)",lat:25.0683835,lng:121.5206862,kid:"跟蝴蝶一起玩的遊戲場！有會唱歌的音樂球、可以敲的大鼓，還有輪椅小朋友也能玩的鞦韆",toys:"無障礙滑梯、鳥巢鞦韆、無障礙鞦韆、旋轉台、音樂球/歡樂鼓/叮噹管、遊戲牆",age:"2-12歲",tip:"捷運圓山站步行約450公尺；七大遊戲區，記得帶水",info:"https://play4u.gov.taipei/News_Content.aspx?n=4773608F226124D4&s=D8DDB67A9F2724C3&sms=7B56BA5392EB632C",nav:"https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E8%8A%B1%E5%8D%9A%E5%85%AC%E5%9C%92%E7%BE%8E%E8%A1%93%E5%9C%92%E5%8D%80%E5%85%B1%E8%9E%8D%E9%81%8A%E6%88%B2%E5%A0%B4",img:"photos/huabo.jpg"},
+{city:"台北",dist:"中山",name:"大佳河濱公園海洋遊戲場",addr:"基隆河中山橋和大直橋之間(希望噴泉旁)",lat:25.0747347,lng:121.5390028,kid:"潛進大海裡玩！大章魚、鯨魚、海豚陪你溜滑梯盪鞦韆，夏天還能玩水騎腳腳車",toys:"貝殼磨石子溜滑梯、章魚腳攀爬網、5種特色鞦韆、躲藏小島、夏季戲水區",age:"全齡",tip:"北市最大河濱遊戲場；可租單車；夏天戲水帶換洗衣物",info:"https://bobowin.blog/p2383",nav:"https://www.google.com/maps/search/?api=1&query=台北市大佳河濱公園海洋遊戲場",img:"badges/02-dajia-octopus.png"},
+{city:"新北",dist:"三重",name:"新北大都會公園｜熊猴森樂園",addr:"新北市三重區(捷運三重站1A出口，出站即到)",lat:25.0642911,lng:121.4775321,kid:"31座溜滑梯的堤坡樂園！從捷運口直接溜進公園，晚上還有燈可以玩到10點",toys:"31座溜滑梯、100組遊具、堤坡滑梯、海世界水樂園(夏季)、幸福小火車(假日50元)",age:"全齡(幼兒到青少年)",tip:"開放至22:00；夏季戲水週二休園；停幸福水漾/重新北側停車場",info:"https://woment.com.tw/43831/new-taipei-metropolitan-park",nav:"https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E5%8C%97%E5%B8%82%E4%B8%89%E9%87%8D%E6%96%B0%E5%8C%97%E5%A4%A7%E9%83%BD%E6%9C%83%E5%85%AC%E5%9C%92%E7%86%8A%E7%8C%B4%E6%A3%AE%E6%A8%82%E5%9C%92",img:"badges/03-metro-bear.png"},
+{city:"新北",dist:"鶯歌",name:"鶯歌古鐘樓公園(公二公園)",addr:"新北市鶯歌區文化路325巷3號(福德宮巷內到底)",lat:24.951747,lng:121.3530774,kid:"消防員主題！爬上三層樓高的鐘樓塔，選磨石子、水管或金屬旋轉溜滑梯衝下來",toys:"三層樓遊戲塔(三種溜滑梯)、攀爬網、消防跑酷場、水管隧道、沙坑、鞦韆",age:"2歲以上",tip:"鶯歌火車站文化路出口步行約7分；有親子廁所、水龍頭",info:"https://bobowin.blog/clock-park",nav:"https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E5%8C%97%E5%B8%82%E9%B6%AF%E6%AD%8C%E5%8F%A4%E9%90%98%E6%A8%93%E5%85%AC%E5%9C%92",img:"badges/04-yingge-bell.png"},
+{city:"新北",dist:"林口",name:"林口樂活公園",addr:"新北市林口區忠孝路616巷26號",lat:25.0667505,lng:121.3748788,kid:"捷運開進公園了！爬上4米高的機捷車廂再咻下來，超斜超刺激",toys:"4米機捷車廂溜滑梯、迴旋溜滑梯、4.5米攀爬網、吊環、鑽籠、獨木橋",age:"2-12歲",tip:"全台首座捷運主題；接近麗園路側；可順遊吉祥影視公園",info:"https://taiwantour.net/linkou-parent-child3",nav:"https://www.google.com/maps/search/?api=1&query=新北市林口樂活公園",img:"badges/05-lohas-train.png"},
+{city:"基隆",dist:"暖暖區",name:"暖暖運動公園遊戲場",addr:"基隆市暖暖區東碇路12號",lat:25.0959915,lng:121.7413308,kid:"基隆最長25公尺的水管溜滑梯！鑽進大炮涵管秘密基地，再挑戰巨大攀爬網",toys:"25公尺水管溜滑梯、巨大攀爬網、鳥巢鞦韆、攀爬架、涵管洞、彩色跑道",age:"2-12歲",tip:"24H開放；有乾淨廁所；附近有停車格，過馬路牽緊",info:"https://myjourney.tw/nuannuan-park/",nav:"https://www.google.com/maps/search/?api=1&query=基隆市暖暖區暖暖運動公園遊戲場",img:"badges/06-nuannuan-sun.png"},
+{city:"基隆",dist:"信義區",name:"中正公園希望之丘兒童遊戲場",addr:"基隆市信義區壽山路5號",lat:25.1325248,lng:121.7494911,kid:"三層樓高的環狀遊戲塔大冒險！管狀旋轉溜滑梯咻下來，大象爺爺在門口迎接",toys:"三層樓遊戲塔、管狀旋轉溜滑梯、磨石子溜滑梯、旋轉盤、鞦韆、沙坑、大象裝置",age:"2-12歲",tip:"公車到基隆醫院走6分；可順遊基隆塔、主普壇；帶水",info:"https://travel.klcg.gov.tw/TourContent.aspx?n=8103&s=385",nav:"https://www.google.com/maps/search/?api=1&query=基隆市中正公園希望之丘遊戲場",img:"photos/hope-hill.jpg"},
+{city:"基隆",dist:"中正區",name:"潮境公園鸚鵡螺溜滑梯",addr:"基隆市中正區北寧路369巷61號",lat:25.1434112,lng:121.8033905,kid:"在海邊玩鸚鵡螺溜滑梯！看大掃帚和九份山海，再去海洋館吹冷氣",toys:"鸚鵡螺溜滑梯、大草原、掃帚裝置、自行車道、海景步道",age:"全齡",tip:"海邊風大帶外套；順遊智能海洋館、海科館、望幽谷",info:"https://bunnyann.tw/keelung-parent-child/",nav:"https://www.google.com/maps/search/?api=1&query=基隆市潮境公園",img:"badges/08-chaojing-spiral.png"},
+{city:"基隆",dist:"七堵區",name:"正光公園(水果主題)",addr:"基隆市七堵區南興路63巷開元路口(南興市場旁)",lat:25.0965803,lng:121.7136004,kid:"掉進水果盤裡！在蘋果橘子西瓜中間溜滑梯攀爬，爸媽逛市場你放電",toys:"水果磨石子溜滑梯(橘子/蘋果/西瓜/葡萄)、攀爬網、跳格子、軟墊鋪面",age:"2-12歲",tip:"在南興市場中央；無雨就是遊樂場；市場周邊找車位",info:"https://keelungplay.com/park1",nav:"https://www.google.com/maps/search/?api=1&query=基隆市七堵區正光公園",img:"badges/09-zhengguang-fruit.png"},
+{city:"桃園",dist:"桃園區",name:"南崁溪第一河濱公園",addr:"桃園市桃園區三元街51號",lat:25.0233918,lng:121.3045443,kid:"森林冒險+雲朵彈跳床！號稱北部最難的攀爬訓練場，跳到沒電回家秒睡",toys:"雲朵彈跳床、森林挑戰場(6關16設施)、水閘門/取水螺旋/水道沙坑",age:"全齡(挑戰區適合大童)",tip:"有廁所；停CITY PARKING三民站/新永和市場；順遊三民運動公園",info:"https://myjourney.tw/taoyuan-riverside-park/",nav:"https://www.google.com/maps/search/?api=1&query=%E6%A1%83%E5%9C%92%E5%B8%82%E5%8D%97%E5%B4%81%E6%BA%AA%E7%AC%AC%E4%B8%80%E6%B2%B3%E6%BF%B1%E5%85%AC%E5%9C%92%E9%81%8A%E6%88%B2%E5%A0%B4",img:"badges/10-nankan-river.png"},
+{city:"桃園",dist:"桃園區",name:"風禾公園",addr:"桃園市桃園區慈文路688號",lat:25.001709,lng:121.2914417,kid:"50公尺滾輪溜滑梯！坐上去咻30秒溜下來，還有大草原可以跑野餐看生態湖",toys:"50米滾輪溜滑梯、沙坑、盪鞦韆、生態湖/步道/大草原",age:"全齡",tip:"國道2號南桃園交流道旁；草原適合野餐墊放電",info:"https://travel.tycg.gov.tw/zh-tw/travel/parent-child-park",nav:"https://www.google.com/maps/search/?api=1&query=%E6%A1%83%E5%9C%92%E5%B8%82%E9%A2%A8%E7%A6%BE%E5%85%AC%E5%9C%92",img:"badges/11-fenghe-rice.png"},
+{city:"桃園",dist:"桃園區",name:"大有梯田生態公園",addr:"桃園市桃園區民富13街底(虎頭山西北側)",lat:25.0122755,lng:121.3212786,kid:"松鼠肚子裡的遊戲場！鑽進5公尺高的大松鼠肚子，再玩鋼軌滑索咻過梯田",toys:"5米松鼠組合遊具、彎曲溜滑梯、松果小屋、鋼軌滑索、沙坑戲水池、攀岩斜坡",age:"全齡(滑索分齡)",tip:"滑翔車假日8-18時午休1hr雨天休；沙坑假日9-17時；有洗腳區",info:"https://www.taoyuan-parkgo.tw/parks/6",nav:"https://www.google.com/maps/search/?api=1&query=桃園市大有梯田生態公園",img:"badges/12-dayou-terrace.png"},
+{city:"桃園",dist:"中壢區",name:"中壢光明公園",addr:"桃園市中壢區民權路396號",lat:24.9625,lng:121.217,approx:true,kid:"四座樹屋秘密基地！在森林裡當小泰山跑酷，再到水樹遊戲島玩水機關",toys:"秘密樹屋、奇幻挑戰塔、水道機關、森林跑酷、大沙坑、共融鞦韆",age:"2-12歲及青少年",tip:"有廁所、YouBike；水區帶換洗衣物；緊鄰建國新村可順遊",info:"https://playfulpark-taoyuan.tw/playgrounds/3",nav:"https://www.google.com/maps/search/?api=1&query=桃園市中壢區光明公園",img:"badges/13-guangming-treehouse.png"},
+{city:"桃園",dist:"桃園區",name:"陽明運動公園",addr:"桃園市桃園區長沙街11號",lat:24.9812091,lng:121.3094614,kid:"彩色山丘滑草場！小山丘磨石滑梯估溜下來，再到森林裡玩溜索沙坑",toys:"彩色山丘磨石子滑梯、滑草區、滑軌、溜索、沙坑、盪鞦韆、小孩版旋轉鞦韆",age:"全齡",tip:"老字號翻新旗艦場；森林遮蔭多；假日早點到；有廁所洗手台",info:"https://warmbrosis.tw/taoyuan-yangmingpark",nav:"https://www.google.com/maps/search/?api=1&query=桃園市陽明運動公園",img:"badges/14-yangming-grasslide.png"},
+{city:"台北",dist:"南港區",name:"新新公園",addr:"台北市南港區南港路三段109巷南側",lat:25.0513514,lng:121.5897779,kid:"城市裡的綠洲！環狀石頭滑梯咻下來，再坐上最快最滑溜的溜索椅，玩完去濕地看水鴨烏龜",toys:"環狀石頭滑梯、迷你攀岩場、三索吊橋、座椅式溜索、跳樁、平衡木、濕地花園/落羽松/水上棧道",age:"2-12歲",tip:"捷運昆陽站步行600m；有免費+收費停車場、乾淨公廁；無障礙通道推車可；可遠眺101",info:"https://snoopyblog.com/blog/post/xinxinpark-nangang",nav:"https://www.google.com/maps/search/?api=1&query=台北市南港區新新公園",img:"badges/15-xinxin-zipline.png"},
+{city:"新北",dist:"中和區",name:"錦和運動公園",addr:"新北市中和區錦和路350-1號",lat:24.9925973,lng:121.4883975,kid:"28公尺超長滾輪溜滑梯！再爬兩層樓穀倉遊戲塔，夏天直接跳進噴泉戲水河道涼快",toys:"28m滾輪溜滑梯、兩層樓穀倉遊戲塔、溜索、鞦韆、無障礙遊具、噴泉戲水河道(夏季)",age:"全齡",tip:"捷運環狀線景安站；緊鄰運動中心+停車場，可玩一整天；玩水帶換洗衣物",info:"https://bobowin.blog/2016-10-03-107/",nav:"https://www.google.com/maps/search/?api=1&query=新北市中和錦和運動公園",img:"badges/16-jinhe-roller.png"},
+{city:"基隆",dist:"安樂區",name:"大武崙森林運動公園",addr:"基隆市安樂區基金一路129巷",lat:25.1371187,lng:121.7098929,kid:"橋下遊戲場大改造！3座高低磨石滑道選一條衝下來，再去攀岩抱石牆當小猴子",toys:"3座高低磨石子滑道、攀岩抱石牆、單索攀爬、三角立體攀爬架、單板/鳥巢鞦韆、搖搖馬、簡易極限運動場",age:"2-12歲(短滑梯2-12歲)",tip:"開放07:00-22:00；國道3號橋下遮蔭；有籃球場；滑板場注意安全",info:"https://www.abic.com.tw/place/view/id/13963",nav:"https://www.google.com/maps/search/?api=1&query=基隆市大武崙森林運動公園",img:"badges/17-dawulun-mountain.png"},
+{city:"桃園",dist:"八德區",name:"楓樹腳公園",addr:"桃園市八德區介壽路二段940號旁",lat:24.9345892,lng:121.2952431,kid:"16公尺長頸鹿肚子裡冒險！爬上桃園最高溜滑梯從長頸鹿背上滑下來，再坐森林滑索飛一圈",toys:"16m長頸鹿遊戲塔(攀岩/爬網/空中鑽籠/旋轉滑梯)、森林滑索、小丘磨石滑梯、森林水道、礫石坑、多種鞦韆、高架棧道",age:"1-2樓6-12歲/3-4樓13歲以上",tip:"遊戲塔滑索開放8:00-17:30雨天休；3樓以上建議高年級；免費停車場+公廁；大草坪可野餐",info:"https://playfulpark-taoyuan.tycg.gov.tw/playgrounds/1",nav:"https://www.google.com/maps/search/?api=1&query=桃園市八德區楓樹腳公園",img:"badges/18-fengshujiao-giraffe.png"}
+];
+const map=L.map('map').setView([25.03,121.45],10);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const markers={};
+const CITYC={"台北":"#2D7DD2","新北":"#1F8A5B","基隆":"#184E77","桃園":"#C08A2D"};
+const BADGES=["badges/00-tianmu-trampoline.png","badges/01-huabo-butterfly.png","badges/02-dajia-octopus.png","badges/03-metro-bear.png","badges/04-yingge-bell.png","badges/05-lohas-train.png","badges/06-nuannuan-sun.png","badges/07-hope-hillstar.png","badges/08-chaojing-spiral.png","badges/09-zhengguang-fruit.png","badges/10-nankan-river.png","badges/11-fenghe-rice.png","badges/12-dayou-terrace.png","badges/13-guangming-treehouse.png","badges/14-yangming-grasslide.png","badges/15-xinxin-zipline.png","badges/16-jinhe-roller.png","badges/17-dawulun-mountain.png","badges/18-fengshujiao-giraffe.png"];
+PARKS.forEach((p,i)=>{
+const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"",html:'<span class="pin" style="--pc:'+(CITYC[p.city]||"#E85A24")+'"></span>',iconSize:[26,26],iconAnchor:[13,23]})}).addTo(map);
+m.bindPopup(`<b>${p.name}</b><br>${p.city}${p.dist}・${p.age}<br><a href="${p.nav}" target="_blank">導航</a>｜<a href="${p.info}" target="_blank">介紹</a>${p.approx?'<br><small>座標為鄰近定位</small>':''}`);
+markers[i]=m;});
+const grid=document.getElementById('grid'),count=document.getElementById('count');
+function card(p,i){
+const SLIDE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9a3 3 0 0 1 3 3v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 8c3 1 5 3 6 6l2 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v3M7 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18.5" cy="5" r="2" fill="currentColor"/></svg>';
+const isBadge=p.img&&p.img.indexOf("badges/")===0;const ph=p.img?`<img class="ph${isBadge?" badge-ph":""}" loading="lazy" src="${p.img}" alt="${p.name}" onerror="this.outerHTML='<div class=&quot;ph-fallback&quot;>'+SLIDE+'</div>'">`:`<div class="ph-fallback">${SLIDE}</div>`;
+return `<div class="card" data-i="${i}"><div>${ph}</div><div class="body">
+<div class="title-row"><span class="badge"><img loading="lazy" src="${BADGES[i]}" alt="${p.name}徽章"></span><h2>${p.name}</h2><span class="tag city-${p.city}">${p.city}</span></div>
+<div class="tagrow"><span class="tag">${p.dist}</span><span class="tag age">${p.age}</span></div>
+<div class="kid">${p.kid}</div>
+<div class="spec"><b>遊具</b><span>${p.toys}</span></div>
+<div class="spec"><b>地址</b><span>${p.addr}</span></div>
+<div class="spec"><b>提醒</b><span>${p.tip}</span></div>
+<div class="btns"><a class="a1" href="${p.nav}" target="_blank">導航</a><a class="a2" href="${p.info}" target="_blank">介紹</a></div>
+</div></div>`;}
+function render(f){
+const idx=PARKS.map((p,i)=>i).filter(i=>f==="全部"||PARKS[i].city===f);
+grid.innerHTML=idx.map(i=>card(PARKS[i],i)).join('');
+count.textContent=`共 ${idx.length} 座・點卡片「導航」直接出發`;
+Object.values(markers).forEach(m=>m.remove());
+idx.forEach(i=>markers[i].addTo(map));
+if(idx.length){const g=L.featureGroup(idx.map(i=>markers[i]));map.fitBounds(g.getBounds().pad(0.15));}}
+document.getElementById('toolbar').addEventListener('click',e=>{
+if(e.target.tagName!=='BUTTON')return;
+document.querySelectorAll('#toolbar button').forEach(b=>b.classList.remove('on'));
+e.target.classList.add('on');render(e.target.dataset.c);});
+render("全部");
+</script>
+</body>
+</html>
