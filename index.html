@@ -63,6 +63,18 @@ h2{font-size:20px;margin:2px 0;font-weight:800;letter-spacing:0}
 .a1{background:var(--brand);color:#fff}.a2{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
 footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 40px}
 .src{font-size:12px;color:var(--mut)}
+.pinb{display:block;width:34px;height:34px;border-radius:50%;overflow:hidden;border:3px solid var(--pc,#E85A24);background:#fff;box-shadow:0 2px 8px rgba(32,48,42,.45)}
+.pinb img{width:100%;height:100%;object-fit:cover;display:block}
+.card{scroll-margin-top:70px}
+.card.flash{box-shadow:0 0 0 3px #1F8A5B,0 14px 30px -18px rgba(32,48,42,.45)}
+.pick{margin-top:8px;width:100%;border:1.5px dashed var(--ink);background:#fff;border-radius:10px;padding:8px;font-size:14px;font-weight:700;cursor:pointer}
+#pickedbar{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);padding:8px 12px;box-shadow:0 4px 16px rgba(32,48,42,.18)}
+#pickedbar[hidden]{display:none}
+#pickedbar img{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none}
+#pickedbar b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+#pickedbar a{background:var(--brand);color:#fff;text-decoration:none;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:700;flex:none}
+#pickedbar button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer;flex:none}
+body.has-pick{padding-top:53px}
 </style>
 </head>
 <body>
@@ -70,6 +82,7 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 40px}
 <h1><img class="mark" src="logo/logo-final.png" alt="放電地圖 logo"> 北北基桃特色公園放電地圖</h1>
 <p>北北基桃特色公園・小朋友視角・點圖釘直接導航</p>
 </header>
+<div id="pickedbar" hidden><img alt=""><b></b><a target="_blank" rel="noopener">導航</a><button type="button" id="unpick">取消</button></div>
 <div class="mapwrap"><div id="map"></div>
 <div class="toolbar" id="toolbar">
 <button data-c="全部" class="on">全部</button>
@@ -112,8 +125,9 @@ const markers={};
 const CITYC={"台北":"#2D7DD2","新北":"#1F8A5B","基隆":"#184E77","桃園":"#C08A2D"};
 const BADGES=["badges/00-tianmu-trampoline.png","badges/01-huabo-butterfly.png","badges/02-dajia-octopus.png","badges/03-metro-bear.png","badges/04-yingge-bell.png","badges/05-lohas-train.png","badges/06-nuannuan-sun.png","badges/07-hope-hillstar.png","badges/08-chaojing-spiral.png","badges/09-zhengguang-fruit.png","badges/10-nankan-river.png","badges/11-fenghe-rice.png","badges/12-dayou-terrace.png","badges/13-guangming-treehouse.png","badges/14-yangming-grasslide.png","badges/15-xinxin-zipline.png","badges/16-jinhe-roller.png","badges/17-dawulun-mountain.png","badges/18-fengshujiao-giraffe.png"];
 PARKS.forEach((p,i)=>{
-const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"",html:'<span class="pin" style="--pc:'+(CITYC[p.city]||"#E85A24")+'"></span>',iconSize:[26,26],iconAnchor:[13,23]})}).addTo(map);
-m.bindPopup(`<b>${p.name}</b><br>${p.city}${p.dist}・${p.age}<br><a href="${p.nav}" target="_blank">導航</a>｜<a href="${p.info}" target="_blank">介紹</a>${p.approx?'<br><small>座標為鄰近定位</small>':''}`);
+const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"",html:'<span class="pinb" style="--pc:'+(CITYC[p.city]||"#E85A24")+'"><img loading="lazy" src="'+BADGES[i]+'" alt=""></span>',iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map);
+m.bindPopup(`<div style="display:flex;gap:8px;align-items:center"><img src="${BADGES[i]}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none"><div><b>${p.name}</b><br>${p.city}${p.dist}・${p.age}<br><a href="${p.nav}" target="_blank">導航</a>｜<a href="${p.info}" target="_blank">介紹</a>${p.approx?'<br><small>座標為鄰近定位</small>':''}</div></div>`);
+m.on('click',()=>focusCard(i));
 markers[i]=m;});
 const grid=document.getElementById('grid'),count=document.getElementById('count');
 function card(p,i){
@@ -126,7 +140,7 @@ return `<div class="card" data-i="${i}"><div>${ph}</div><div class="body">
 <div class="spec"><b>遊具</b><span>${p.toys}</span></div>
 <div class="spec"><b>地址</b><span>${p.addr}</span></div>
 <div class="spec"><b>提醒</b><span>${p.tip}</span></div>
-<div class="btns"><a class="a1" href="${p.nav}" target="_blank">導航</a><a class="a2" href="${p.info}" target="_blank">介紹</a></div>
+<div class="btns"><a class="a1" href="${p.nav}" target="_blank">導航</a><a class="a2" href="${p.info}" target="_blank">介紹</a></div><button type="button" class="pick" data-i="${i}">就是這座 → 置頂方便找</button>
 </div></div>`;}
 function render(f){
 const idx=PARKS.map((p,i)=>i).filter(i=>f==="全部"||PARKS[i].city===f);
@@ -135,11 +149,19 @@ count.textContent=`共 ${idx.length} 座`;
 Object.values(markers).forEach(m=>m.remove());
 idx.forEach(i=>markers[i].addTo(map));
 if(idx.length){const g=L.featureGroup(idx.map(i=>markers[i]));map.fitBounds(g.getBounds().pad(0.15));}}
+function flashCard(i){const el=grid.querySelector('.card[data-i="'+i+'"]');if(!el)return false;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2500);return true;}
+function focusCard(i){if(markers[i])markers[i].openPopup();flashCard(i);}
+function flyToPark(i){const p=PARKS[i];map.flyTo([p.lat,p.lng],14,{duration:1});setTimeout(()=>{if(markers[i])markers[i].openPopup();},1100);}
+function setPick(i){const p=PARKS[i];if(!p)return;const bar=document.getElementById('pickedbar');const im=bar.querySelector('img');im.src=BADGES[i];im.alt=p.name;bar.querySelector('b').textContent=p.city+'・'+p.name;bar.querySelector('a').href=p.nav;bar.hidden=false;document.body.classList.add('has-pick');}
+function clearPick(){document.getElementById('pickedbar').hidden=true;document.body.classList.remove('has-pick');}
+grid.addEventListener('click',e=>{if(e.target.closest('a'))return;const pk=e.target.closest('.pick');if(pk){setPick(+pk.dataset.i);flashCard(+pk.dataset.i);return;}const c=e.target.closest('.card');if(c)flyToPark(+c.dataset.i);});
+document.getElementById('unpick').addEventListener('click',clearPick);
 document.getElementById('toolbar').addEventListener('click',e=>{
 if(e.target.tagName!=='BUTTON')return;
 document.querySelectorAll('#toolbar button').forEach(b=>b.classList.remove('on'));
 e.target.classList.add('on');render(e.target.dataset.c);});
 render("全部");
+(function(){const q=new URLSearchParams(location.search).get('park');if(q!==null&&q!==''){const n=+q;if(Number.isInteger(n)&&PARKS[n]){setPick(n);setTimeout(()=>focusCard(n),600);}}})();
 </script>
 </body>
 </html>
