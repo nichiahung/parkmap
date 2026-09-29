@@ -30,8 +30,8 @@ header p{color:var(--mut);margin:8px 0 0}
 .grid{max-width:1080px;margin:14px auto 60px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s cubic-bezier(.2,.7,.2,1)}
 @media(hover:hover){.card:hover{transform:translateY(-3px);box-shadow:0 14px 30px -18px rgba(32,48,42,.45)}}
-.card img.ph{width:100%;height:190px;object-fit:cover;background:#F6EEDF;display:block}.card img.ph.badge-ph{object-fit:contain;background:#FFF6E8;padding:10px}
-.ph-fallback{height:190px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFE3C2,#CFE9D8)}.ph-fallback svg{width:64px;height:64px;color:var(--brand)}
+.card img.ph{width:100%;aspect-ratio:4/3;object-fit:cover;background:#F6EEDF;display:block}.card img.ph.badge-ph{object-fit:contain;background:#FFF6E8;padding:10px}
+.ph-fallback{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFE3C2,#CFE9D8)}.ph-fallback svg{width:64px;height:64px;color:var(--brand)}
 .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
 .meta{overflow-wrap:anywhere}
 .tagrow{display:flex;gap:6px;flex-wrap:wrap}
