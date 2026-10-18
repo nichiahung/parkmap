@@ -1,0 +1,11 @@
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;background:#FFFDF4;color:#1E3325}
+header{padding:16px 20px;background:#FFFDF4;border-bottom:1.5px solid #E2EFE5}
+header h1{margin:0;font-size:22px;font-weight:900;color:#14361F}
+header p{margin:4px 0 12px;color:#2F6B40;font-size:14px;font-weight:700}
+#filters{display:flex;gap:8px;flex-wrap:wrap}
+#filters button{border:1.5px solid #CDE8D4;background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;color:#1E7E46;cursor:pointer;min-height:44px}
+#filters button.on{background:#1E7E46;color:#fff;border-color:#1E7E46}
+#map{height:calc(100vh - 170px);min-height:420px}
+.maplibre-popup-content{border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6}
+.popup-tags{color:#2F6B40;font-size:12px;margin-top:6px}
+.popup-link{font-size:13px;font-weight:800;color:#1E7E46}
