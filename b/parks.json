@@ -416,5 +416,27 @@
     "tip": "遊戲塔滑索開放8:00-17:30雨天休；3樓以上建議高年級；免費停車場+公廁；大草坪可野餐",
     "nav": "https://www.google.com/maps/search/?api=1&query=桃園市八德區楓樹腳公園",
     "approx": false
+  },
+  {
+    "id": 19,
+    "name": "中央公園飛行美樂地",
+    "district": "西屯",
+    "city": "台中",
+    "lat": 24.1960825,
+    "lon": 120.650438,
+    "power": 3,
+    "age": "5-12歲",
+    "stay": "可待半天",
+    "tags": [
+      "西屯"
+    ],
+    "image": "",
+    "source": "https://adontrip.com/blog/70596/",
+    "addr": "台中市西屯區中央公園內",
+    "kid": "飛碟降落！32米雙軌滑索全台最長",
+    "toys": "飛碟滑梯、32米滑索、滑軌、鞦韆、旋轉盤、沙坑",
+    "tip": "週邊付費停車；帶野餐墊",
+    "nav": "https://www.google.com/maps/search/?api=1&query=台中市中央公園飛行美樂地",
+    "approx": true
   }
 ]
