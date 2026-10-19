@@ -71,3 +71,9 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 40px}
 body.has-pick{padding-top:53px}
 
 .pinb{width:40px;height:40px}.maplibregl-popup-content{border-radius:14px;font-family:inherit}.maplibregl-popup-content a{color:#1F8A5B;font-weight:700}
+#tagbar{display:flex;gap:8px;flex-wrap:wrap;max-width:1080px;margin:0 auto;padding:10px 20px 0}
+#tagbar button{border:1.5px solid #CDE8D4;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;color:#1E7E46;cursor:pointer;min-height:40px}
+#tagbar button.on{background:#1E7E46;color:#fff;border-color:#1E7E46}
+.pp-links{display:flex;gap:8px;margin-top:8px}
+.pp-links a{flex:1;text-align:center;text-decoration:none!important;border-radius:8px;padding:10px 8px;font-size:14px;font-weight:700;background:#E85A24!important;color:#fff!important}
+.pp-links a+a{background:#fff!important;color:#232323!important;border:1.5px solid #232323}

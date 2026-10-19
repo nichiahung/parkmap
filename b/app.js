@@ -30,11 +30,16 @@ PARKS.forEach(function(p,i){
 var wrap=document.createElement('div');
 wrap.style.cssText='width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer';
 wrap.innerHTML='<span class="pinb" style="--pc:'+(CITYC[p.city]||"#E85A24")+'"><img loading="lazy" src="'+BADGES[i]+'" alt=""></span>';
-var popup=new maplibregl.Popup({offset:18}).setHTML('<div style="display:flex;gap:8px;align-items:center"><img src="'+BADGES[i]+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none"><div><b>'+p.name+'</b><br>'+p.city+p.dist+'\u30fb'+p.age+'<br><a href="'+p.nav+'" target="_blank">\u5c0e\u822a</a>\uff5c<a href="'+p.info+'" target="_blank">\u4ecb\u7d39</a>'+(p.approx?'<br><small>\u5ea7\u6a19\u70ba\u9130\u8fd1\u5b9a\u4f4d</small>':'')+'</div></div>');
+var popup=new maplibregl.Popup({offset:18}).setHTML('<div style="display:flex;gap:8px;align-items:center"><img src="'+BADGES[i]+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none"><div><b>'+p.name+'</b><br>'+p.city+p.dist+'・'+p.age+'<br><span class="pp-links"><a href="'+p.nav+'" target="_blank">導航</a><a href="'+p.info+'" target="_blank">介紹</a></span>'+(p.approx?'<br><small>座標為鄰近定位</small>':'')+'</div></div>');
 var m=new maplibregl.Marker({element:wrap}).setLngLat([p.lng,p.lat]).setPopup(popup).addTo(map);
 wrap.addEventListener('click',function(){focusCard(i);});
 markers[i]=m;});
 var grid=document.getElementById('grid'),count=document.getElementById('count');
+var activeCity="全部",activeTag="全部";
+var TAGDEFS=[["有沙坑",["沙坑"]],["可玩水",["戲水","水道","噴泉","水樂園","玩水"]],["溜索滑索",["溜索","滑索","滑翔"]],["攀爬",["攀爬","攀岩","跑酷","挑戰","吊橋","吊環"]],["鞦韆",["鞦韆"]]];
+function matchTag(p,label){ if(label==="全部")return true; for(var k=0;k<TAGDEFS.length;k++){ if(TAGDEFS[k][0]===label){ var kws=TAGDEFS[k][1]; for(var j=0;j<kws.length;j++){ if(p.toys.indexOf(kws[j])!==-1)return true; } return false; } } return true; }
+function buildTags(){ var bar=document.getElementById('tagbar'); var labels=["全部"]; for(var k=0;k<TAGDEFS.length;k++){ labels.push(TAGDEFS[k][0]); } var html=""; for(var t=0;t<labels.length;t++){ html+='<button data-t="'+labels[t]+'" class="'+(labels[t]===activeTag?'on':'')+'">'+labels[t]+'</button>'; } bar.innerHTML=html; }
+document.getElementById('tagbar').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; activeTag=e.target.dataset.t; var btns=document.getElementById('tagbar').querySelectorAll('button'); btns.forEach(function(b){ b.classList.toggle('on',b.dataset.t===activeTag); }); render(); });
 function card(p,i){
 var SLIDE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9a3 3 0 0 1 3 3v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 8c3 1 5 3 6 6l2 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v3M7 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18.5" cy="5" r="2" fill="currentColor"/></svg>';
 var isBadge=p.img&&p.img.indexOf("../badges/")===0;var ph=p.img?'<img class="ph'+(isBadge?" badge-ph":"")+'" loading="lazy" src="'+p.img+'" alt="'+p.name+'" onerror="this.outerHTML=\'<div class=&quot;ph-fallback&quot;>'+SLIDE+'</div>\'">':'<div class="ph-fallback">'+SLIDE+'</div>';
@@ -47,10 +52,10 @@ return '<div class="card" data-i="'+i+'"><div>'+ph+'</div><div class="body">'+
 '<div class="spec"><b>\u63d0\u9192</b><span>'+p.tip+'</span></div>'+
 '<div class="btns"><a class="a1" href="'+p.nav+'" target="_blank">\u5c0e\u822a</a><a class="a2" href="'+p.info+'" target="_blank">\u4ecb\u7d39</a></div><button type="button" class="pick" data-i="'+i+'">\u5c31\u662f\u9019\u5ea7 \u2192 \u7f6e\u9802\u65b9\u4fbf\u627e</button>'+
 '</div></div>';}
-function render(f){
-var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return f==="\u5168\u90e8"||PARKS[i].city===f;});
+function render(){
+var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||PARKS[i].city===activeCity)&&matchTag(PARKS[i],activeTag);});
 grid.innerHTML=idx.map(function(i){return card(PARKS[i],i);}).join('');
-count.textContent='\u5171 '+idx.length+' \u5ea7';
+count.textContent='共 '+idx.length+' 座'+(activeTag==="全部"?'':'・'+activeTag);
 Object.keys(markers).forEach(function(k){markers[k].remove();});
 idx.forEach(function(i){markers[i].addTo(map);});
 if(idx.length===1){var s=PARKS[idx[0]];map.flyTo({center:[s.lng,s.lat],zoom:14});}
@@ -65,6 +70,6 @@ document.getElementById('unpick').addEventListener('click',clearPick);
 document.getElementById('toolbar').addEventListener('click',function(e){
 if(e.target.tagName!=='BUTTON')return;
 document.querySelectorAll('#toolbar button').forEach(function(b){b.classList.remove('on');});
-e.target.classList.add('on');render(e.target.dataset.c);});
-render("\u5168\u90e8");
+e.target.classList.add('on');activeCity=e.target.dataset.c;render();});
+buildTags();render();
 (function(){var q=new URLSearchParams(location.search).get('park');if(q!==null&&q!==''){var n=+q;if(Number.isInteger(n)&&PARKS[n]){setPick(n);setTimeout(function(){focusCard(n);},600);}}})();
