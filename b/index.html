@@ -1,19 +1,31 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>放電地圖 - B 版 (MapLibre 免費底圖)</title>
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-<link rel="stylesheet" href="./style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北北基桃特色公園放電地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <header>
-  <h1>放電地圖</h1>
-  <p>免費底圖版 · <span id="count"></span> · 不用 key 不綁卡</p>
-  <div id="filters"></div>
+<h1><img class="mark" src="../logo/logo-final.png" alt="放電地圖 logo"> 北北基桃特色公園放電地圖</h1>
+<p>北北基桃特色公園・小朋友視角・點圖釘直接導航・免費底圖版</p>
 </header>
-<main><div id="map"></div></main>
+<div id="pickedbar" hidden><img alt=""><b></b><a target="_blank" rel="noopener">導航</a><button type="button" id="unpick">取消</button></div>
+<div class="mapwrap"><div id="map"></div>
+<div class="toolbar" id="toolbar">
+<button data-c="全部" class="on">全部</button>
+<button data-c="台北">台北</button>
+<button data-c="新北">新北</button>
+<button data-c="基隆">基隆</button>
+<button data-c="桃園">桃園</button>
+<span class="count" id="count"></span>
+</div>
+</div>
+<div class="legend"><span><i style="background:#2D7DD2"></i>台北</span><span><i style="background:#1F8A5B"></i>新北</span><span><i style="background:#184E77"></i>基隆</span><span><i style="background:#C08A2D"></i>桃園</span><span>底圖 © OpenStreetMap © CARTO</span></div>
+<div class="grid" id="grid"></div>
+<footer>天母、花博照片：臺北市政府・希望之丘照片：基隆市文化觀光局（以上政府開放授權）・座標為近似定位，出發前請以 Google 導航為準</footer>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="./app.js"></script>
 </body>
