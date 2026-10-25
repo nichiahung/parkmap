@@ -11,7 +11,15 @@
 <header>
 <h1><img class="mark" src="../logo/logo-final.png" alt="放電地圖 logo"> 台灣親子地圖</h1>
 <p>台灣親子景點・小朋友視角・點圖釘直接導航・免費底圖版</p>
+<div class="stats" id="stats">載入中…</div>
+<div class="searchrow">
+<input id="q" type="search" placeholder="搜尋：沙坑、玩水、溜索、廁所、停車、推車、雨天…" aria-label="關鍵字搜尋">
+<button type="button" id="random" title="隨機挑一座">🎲 帶我去</button>
+<button type="button" id="lines-toggle" class="on" title="顯示或隱藏順遊線">順遊線</button>
+<button type="button" id="help" title="新手導覽">？</button>
+</div>
 </header>
+<section class="islands-wrap" aria-label="全台親子島"><div id="islands"></div></section>
 <div id="pickedbar" hidden><img alt=""><b></b><a target="_blank" rel="noopener">導航</a><button type="button" id="unpick">取消</button></div>
 <div class="mapwrap"><div id="map"></div>
 <div class="toolbar" id="toolbar">
@@ -33,5 +41,9 @@
 <footer>天母、花博照片：臺北市政府・希望之丘照片：基隆市文化觀光局（以上政府開放授權）・座標為近似定位，出發前請以 Google 導航為準</footer>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="./app.js"></script>
+<div id="onboard" hidden><div class="ob-card">
+<div class="ob-step" id="ob-text"></div>
+<div class="ob-btns"><button type="button" id="ob-skip">跳過</button><button type="button" id="ob-next">下一步 →</button></div>
+</div></div>
 </body>
 </html>

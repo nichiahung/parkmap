@@ -29,6 +29,9 @@ var map=new maplibregl.Map({container:'map',style:'https://basemaps.cartocdn.com
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
 var markers={};
 var CITYC={"台北":"#2D7DD2","新北":"#1F8A5B","基隆":"#184E77","桃園":"#C08A2D","台中":"#7C3AED","嘉義":"#B45309"};
+var COUNTIES=[["北",["基隆","台北","新北","桃園","新竹市","新竹縣","宜蘭"]],["中",["苗栗","台中","彰化","南投","雲林"]],["南",["嘉義市","嘉義縣","台南","高雄","屏東"]],["東",["花蓮","台東"]],["離島",["澎湖","金門","連江"]]];
+function pCounty(p){return p.city==="嘉義"?"嘉義市":p.city;}
+function countyCount(c){var n=0;for(var i=0;i<PARKS.length;i++){if(pCounty(PARKS[i])===c)n++;}return n;}
 PARKS.forEach(function(p,i){
 var wrap=document.createElement('div');
 wrap.style.cssText='width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer';
@@ -38,20 +41,24 @@ var m=new maplibregl.Marker({element:wrap}).setLngLat([p.lng,p.lat]).setPopup(po
 wrap.addEventListener('click',function(){focusCard(i);});
 markers[i]=m;});
 var grid=document.getElementById('grid'),count=document.getElementById('count');
-var activeCity="全部";var activePower=0;
+var activeCity="全部";var activePower=0;var activeQ="";var showLines=true;
 var activeType="全部";
 function ptype(p){ return p.type||"公園"; }
 var TYPEDEFS=["公園","室內","步道"];
-function buildType(){ var bar=document.getElementById('typebar'); var defs=["全部"].concat(TYPEDEFS); var html=""; for(var k=0;k<defs.length;k++){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&PARKS[i].city!==activeCity)continue; if(defs[k]==="全部"||ptype(PARKS[i])===defs[k])n++; } html+='<button data-y="'+defs[k]+'" class="'+(activeType===defs[k]?'on':'')+'">'+defs[k]+' '+n+'</button>'; } bar.innerHTML=html; }
+function buildType(){ var bar=document.getElementById('typebar'); var defs=["全部"].concat(TYPEDEFS); var html=""; for(var k=0;k<defs.length;k++){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&pCounty(PARKS[i])!==activeCity)continue; if(defs[k]==="全部"||ptype(PARKS[i])===defs[k])n++; } html+='<button data-y="'+defs[k]+'" class="'+(activeType===defs[k]?'on':'')+'">'+defs[k]+' '+n+'</button>'; } bar.innerHTML=html; }
 document.getElementById('typebar').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; activeType=e.target.dataset.y; buildType();render(); });
 var TAGDEFS=[["有沙坑",["沙坑"]],["可玩水",["戲水","水道","噴泉","水樂園","玩水","戲水池"]],["溜索滑索",["溜索","滑索","滑翔"]],["攀爬",["攀爬","攀岩","跑酷","挑戰","吊橋","吊環","抱石"]],["鞦韆",["鞦韆"]],["可野餐",["野餐","大草原","大草坪"]],["有遮蔭",["遮蔭","森林"]]];var activeTags=[];
 function matchTags(p){ if(!activeTags.length)return true; var t=p.toys+" "+p.tip; for(var k=0;k<activeTags.length;k++){ var ok=false; for(var d=0;d<TAGDEFS.length;d++){ if(TAGDEFS[d][0]===activeTags[k]){ var kws=TAGDEFS[d][1]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])!==-1){ok=true;break;} } break; } } if(!ok)return false; } return true; }
-function tagCount(label){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&PARKS[i].city!==activeCity)continue; var t=PARKS[i].toys+" "+PARKS[i].tip; for(var d=0;d<TAGDEFS.length;d++){ if(TAGDEFS[d][0]===label){ var kws=TAGDEFS[d][1]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])!==-1){n++;break;} } break; } } } return n; }
+function tagCount(label){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&pCounty(PARKS[i])!==activeCity)continue; var t=PARKS[i].toys+" "+PARKS[i].tip; for(var d=0;d<TAGDEFS.length;d++){ if(TAGDEFS[d][0]===label){ var kws=TAGDEFS[d][1]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])!==-1){n++;break;} } break; } } } return n; }
 function buildTags(){ var bar=document.getElementById('tagbar'); var html='<button data-t="__all" class="'+(activeTags.length?'':'on')+'">全部</button>'; for(var k=0;k<TAGDEFS.length;k++){ var on=false; for(var s=0;s<activeTags.length;s++){ if(activeTags[s]===TAGDEFS[k][0])on=true; } html+='<button data-t="'+TAGDEFS[k][0]+'" class="'+(on?'on':'')+'">'+TAGDEFS[k][0]+' '+tagCount(TAGDEFS[k][0])+'</button>'; } bar.innerHTML=html; }
 document.getElementById('tagbar').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; var t=e.target.dataset.t; if(t==="__all"){ activeTags=[]; } else { var at=activeTags.indexOf(t); if(at===-1){activeTags.push(t);} else {activeTags.splice(at,1);} } buildTags();render(); });
-function cityCount(){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity==="全部"||PARKS[i].city===activeCity)n++; } return n; }
-function buildPower(){ var bar=document.getElementById('powerbar'); var defs=[[0,"全部"],[3,"重度放電"],[2,"中度放電"],[1,"輕量放電"]]; var html=""; for(var k=0;k<defs.length;k++){ var n=defs[k][0]===0?cityCount():PARKS.filter(function(p){ return (activeCity==="全部"||p.city===activeCity)&&p.power===defs[k][0]; }).length; html+='<button data-p="'+defs[k][0]+'" class="'+(activePower===defs[k][0]?'on':'')+'">'+(defs[k][0]===0?"全部":"⚡".repeat(defs[k][0])+defs[k][1])+' '+n+'</button>'; } bar.innerHTML=html; }
+function cityCount(){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity==="全部"||pCounty(PARKS[i])===activeCity)n++; } return n; }
+function buildPower(){ var bar=document.getElementById('powerbar'); var defs=[[0,"全部"],[3,"重度放電"],[2,"中度放電"],[1,"輕量放電"]]; var html=""; for(var k=0;k<defs.length;k++){ var n=defs[k][0]===0?cityCount():PARKS.filter(function(p){ return (activeCity==="全部"||pCounty(p)===activeCity)&&p.power===defs[k][0]; }).length; html+='<button data-p="'+defs[k][0]+'" class="'+(activePower===defs[k][0]?'on':'')+'">'+(defs[k][0]===0?"全部":"⚡".repeat(defs[k][0])+defs[k][1])+' '+n+'</button>'; } bar.innerHTML=html; }
 document.getElementById('powerbar').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; activePower=+e.target.dataset.p; buildPower();render(); });
+function havKm(a,b,c,d){var R=6371,r=Math.PI/180;var s1=Math.sin((c-a)/2*r),s2=Math.sin((d-b)/2*r);var h=s1*s1+Math.cos(a*r)*Math.cos(c*r)*s2*s2;return 2*R*Math.asin(Math.sqrt(h));}
+var PAIR=PARKS.map(function(p,i){var best=-1,bd=1e9;for(var j=0;j<PARKS.length;j++){if(j===i)continue;var q=PARKS[j];var dd=havKm(p.lat,p.lng,q.lat,q.lng);if(q.city===p.city){if(dd<bd){bd=dd;best=j;}}}if(best===-1){for(var k=0;k<PARKS.length;k++){if(k===i)continue;var q2=PARKS[k];var d2=havKm(p.lat,p.lng,q2.lat,q2.lng);if(d2<bd){bd=d2;best=k;}}}return best;});
+function matchQ(p){if(!activeQ)return true;var q=activeQ.trim();if(!q)return true;var hay=(p.name+" "+p.city+p.dist+" "+p.kid+" "+p.toys+" "+p.tip+" "+p.addr+" "+p.age);return hay.indexOf(q)!==-1;}
+function buildStats(){var el=document.getElementById('stats');if(!el)return;var all=0;for(var r=0;r<COUNTIES.length;r++)all+=COUNTIES[r][1].length;var has={};PARKS.forEach(function(p){has[pCounty(p)]=1;});var nh=Object.keys(has).length;el.innerHTML='全台 <b>'+all+'</b> 縣市・已收 <b>'+nh+'</b> 縣市 <b>'+PARKS.length+'</b> 座・<b>'+(all-nh)+'</b> 縣市待補';}
 function card(p,i){
 var SLIDE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h9a3 3 0 0 1 3 3v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 8c3 1 5 3 6 6l2 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v3M7 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18.5" cy="5" r="2" fill="currentColor"/></svg>';
 var isBadge=p.img&&p.img.indexOf("../badges/")===0;var ph=p.img?'<img class="ph'+(isBadge?" badge-ph":"")+'" loading="lazy" src="'+p.img+'" alt="'+p.name+'" onerror="this.outerHTML=\'<div class=&quot;ph-fallback&quot;>'+SLIDE+'</div>\'">':'<div class="ph-fallback">'+SLIDE+'</div>';
@@ -59,19 +66,24 @@ return '<div class="card" data-i="'+i+'"><div>'+ph+'</div><div class="body">'+
 '<div class="title-row"><span class="badge">'+(BADGES[i]&&BADGES[i].indexOf(".png")!==-1?'<img loading="lazy" src="'+BADGES[i]+'" alt="'+p.name+'徽章">':p.name[0])+'</span><h2>'+p.name+'</h2><span class="tag city-'+p.city+'">'+p.city+'</span></div>'+
 '<div class="tagrow"><span class="tag power">'+'\u26a1'.repeat(p.power)+' '+["\u8f15\u91cf\u653e\u96fb","\u4e2d\u5ea6\u653e\u96fb","\u91cd\u5ea6\u653e\u96fb"][p.power-1]+'</span><span class="tag">'+p.dist+'</span><span class="tag age">'+p.age+'</span></div>'+
 '<div class="kid">'+p.kid+'</div>'+
+(function(){var j=PAIR[i];if(j==null||j<0||!PARKS[j])return '';var q2=PARKS[j];var km=havKm(p.lat,p.lng,q2.lat,q2.lng);return '<div class="shun">🔗 順遊：'+q2.name+'（同'+(q2.city===p.city?q2.city+'・':'')+'約'+km.toFixed(1)+'公里）</div>';})()+
 '<div class="spec"><b>\u904a\u5177</b><span>'+p.toys+'</span></div>'+
 '<div class="spec"><b>\u5730\u5740</b><span>'+p.addr+'</span></div>'+
 '<div class="spec"><b>\u63d0\u9192</b><span>'+p.tip+'</span></div>'+
 '<div class="btns"><a class="a1" href="'+p.nav+'" target="_blank">\u5c0e\u822a</a><a class="a2" href="'+p.info+'" target="_blank">\u4ecb\u7d39</a></div><button type="button" class="pick" data-i="'+i+'">\u5c31\u662f\u9019\u5ea7 \u2192 \u7f6e\u9802\u65b9\u4fbf\u627e</button>'+
 '</div></div>';}
 function render(){
-var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||PARKS[i].city===activeCity)&&matchTags(PARKS[i])&&(activeType==="全部"||ptype(PARKS[i])===activeType)&&(activePower===0||PARKS[i].power===activePower);});
+var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||pCounty(PARKS[i])===activeCity)&&matchTags(PARKS[i])&&(activeType==="全部"||ptype(PARKS[i])===activeType)&&(activePower===0||PARKS[i].power===activePower)&&matchQ(PARKS[i]);});
 grid.innerHTML=idx.map(function(i){return card(PARKS[i],i);}).join('');
-count.textContent='共 '+idx.length+' 座'+(activeTags.length?'・'+activeTags.join('+'):'')+(activeType==="全部"?'':'・'+activeType)+(activePower?'・'+'⚡'.repeat(activePower):'');
+if(!idx.length){grid.innerHTML = activeCity==="全部"
+  ? '<div class="empty-card"><h2>沒有符合的景點</h2><p>換個條件試試。</p></div>'
+  : '<div class="empty-card"><h2>'+activeCity+' 還沒收錄</h2><p>這一區還在等大家回報好去處，有口袋名單就在 #parkmap 留言。</p></div>';}
+count.textContent='共 '+idx.length+' 座'+(activeTags.length?'・'+activeTags.join('+'):'')+(activeType==="全部"?'':'・'+activeType)+(activePower?'・'+'⚡'.repeat(activePower):'')+(activeQ?'・「'+activeQ+'」':'');
 Object.keys(markers).forEach(function(k){markers[k].remove();});
 idx.forEach(function(i){markers[i].addTo(map);});
 if(idx.length===1){var s=PARKS[idx[0]];map.flyTo({center:[s.lng,s.lat],zoom:14});}
-else if(idx.length){var b=new maplibregl.LngLatBounds();idx.forEach(function(i){b.extend([PARKS[i].lng,PARKS[i].lat]);});map.fitBounds(b,{padding:50});}}
+else if(idx.length){var b=new maplibregl.LngLatBounds();idx.forEach(function(i){b.extend([PARKS[i].lng,PARKS[i].lat]);});map.fitBounds(b,{padding:50});}
+try{if(typeof drawLines==='function')drawLines(idx);}catch(e){}}
 function flashCard(i){var el=grid.querySelector('.card[data-i="'+i+'"]');if(!el)return false;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash');},2500);return true;}
 function focusCard(i){var p=PARKS[i];map.flyTo({center:[p.lng,p.lat],zoom:14});setTimeout(function(){if(markers[i])markers[i].togglePopup();},1100);flashCard(i);}
 function flyToPark(i){focusCard(i);}
@@ -79,9 +91,42 @@ function setPick(i){var p=PARKS[i];if(!p)return;var bar=document.getElementById(
 function clearPick(){document.getElementById('pickedbar').hidden=true;document.body.classList.remove('has-pick');}
 grid.addEventListener('click',function(e){if(e.target.closest('a'))return;var pk=e.target.closest('.pick');if(pk){setPick(+pk.dataset.i);flashCard(+pk.dataset.i);return;}var c=e.target.closest('.card');if(c)flyToPark(+c.dataset.i);});
 document.getElementById('unpick').addEventListener('click',clearPick);
+function buildToolbar(){var bar=document.getElementById('toolbar');var all=[];for(var r=0;r<COUNTIES.length;r++){for(var k=0;k<COUNTIES[r][1].length;k++)all.push(COUNTIES[r][1][k]);}var html='<button data-c="全部" class="'+(activeCity==="全部"?'on':'')+'">全部 '+PARKS.length+'</button>';for(var i=0;i<all.length;i++){var n=countyCount(all[i]);html+='<button data-c="'+all[i]+'" class="'+(activeCity===all[i]?'on':'')+(n?'':' empty')+'">'+all[i]+(n?' '+n:' 待補')+'</button>';}html+='<span class="count" id="count"></span>';bar.innerHTML=html;count=document.getElementById('count');}
+function buildIslands(){
+  var box=document.getElementById('islands');if(!box)return;var html='';
+  for(var r=0;r<COUNTIES.length;r++){
+    html+='<div class="isl-region"><span class="isl-rname">'+COUNTIES[r][0]+'</span><div class="isl-row">';
+    var cs=COUNTIES[r][1];
+    for(var k=0;k<cs.length;k++){var n=countyCount(cs[k]);
+      html+='<button data-c="'+cs[k]+'" class="isl'+(n?' has':' empty')+(activeCity===cs[k]?' on':'')+'"><b>'+cs[k]+'</b><small>'+(n?n+'座':'待補')+'</small></button>';}
+    html+='</div></div>';
+  }
+  box.innerHTML=html;
+}
+function paintIslands(){
+  var box=document.getElementById('islands');if(!box)return;
+  var btns=box.querySelectorAll('button[data-c]');
+  for(var i=0;i<btns.length;i++)btns[i].classList.toggle('on',btns[i].dataset.c===activeCity);
+}
+function selectCounty(c){
+  activeCity=c;buildToolbar();paintIslands();buildTags();buildType();buildPower();render();
+  var m=document.getElementById('map');if(m)m.scrollIntoView({behavior:'smooth',block:'center'});
+}
+document.getElementById('islands').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(!b)return;selectCounty(b.dataset.c);});
 document.getElementById('toolbar').addEventListener('click',function(e){
 if(e.target.tagName!=='BUTTON')return;
 document.querySelectorAll('#toolbar button').forEach(function(b){b.classList.remove('on');});
-e.target.classList.add('on');activeCity=e.target.dataset.c;buildTags();buildPower();render();});
-buildTags();buildType();buildPower();render();
+e.target.classList.add('on');activeCity=e.target.dataset.c;paintIslands();buildTags();buildType();buildPower();render();});
+buildToolbar();buildTags();buildType();buildPower();buildStats();buildIslands();render();
+function drawLines(idx){if(!map.getSource||!map.getSource('shun'))return;if(!showLines||!idx||!idx.length){map.getSource('shun').setData({type:'FeatureCollection',features:[]});return;}var set={};idx.forEach(function(i){set[i]=1;});var feats=[];for(var i=0;i<PAIR.length;i++){var j=PAIR[i];if(j==null||j<0)continue;if(!(set[i]&&set[j]))continue;var a=PARKS[i],b2=PARKS[j];feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[[a.lng,a.lat],[b2.lng,b2.lat]]},properties:{}});}map.getSource('shun').setData({type:'FeatureCollection',features:feats});}
+map.on('load',function(){try{map.addSource('shun',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'shun-line',type:'line',source:'shun',paint:{'line-color':'#1E7E46','line-width':2,'line-dasharray':[2,2],'line-opacity':0.7}});}catch(e){}try{var idx2=PARKS.map(function(p,i){return i;});drawLines(idx2);}catch(e2){}});
+var _qt=null;document.getElementById('q').addEventListener('input',function(e){clearTimeout(_qt);var v=e.target.value;_qt=setTimeout(function(){activeQ=v;render();},250);});
+document.getElementById('random').addEventListener('click',function(){var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||pCounty(PARKS[i])===activeCity)&&matchTags(PARKS[i])&&(activeType==="全部"||ptype(PARKS[i])===activeType)&&(activePower===0||PARKS[i].power===activePower)&&matchQ(PARKS[i]);});if(!idx.length)return;var pick=idx[Math.floor(Math.random()*idx.length)];setPick(pick);focusCard(pick);});
+document.getElementById('lines-toggle').addEventListener('click',function(e){showLines=!showLines;e.target.classList.toggle('on',showLines);var idx=PARKS.map(function(p,i){return i;});try{drawLines(idx);}catch(err){}});
+var OBSTEPS=["<b>第 1 步・選縣市</b><br>點上方親子島或地圖下方的縣市按鈕，只看那一區。全台 22 縣市，已收 6 縣市 22 座。","<b>第 2 步・選放電</b><br>⚡⚡⚡重度可待半天，⚡輕量適合順路。再用關鍵字找沙坑、玩水、廁所。","<b>第 3 步・點卡導航</b><br>點卡片飛到地圖，🔗順遊告訴你下一座去哪。🎲帶我去幫選擇困難的你。"];var obi=0;
+function showOb(i){obi=i;var t=document.getElementById('ob-text');var ob=document.getElementById('onboard');if(!t||!ob)return;if(i>=OBSTEPS.length){ob.hidden=true;try{localStorage.setItem('parkmap_ob','1');}catch(e){}return;}t.innerHTML=OBSTEPS[i];ob.hidden=false;document.getElementById('ob-next').textContent=(i===OBSTEPS.length-1?'開始逛 →':'下一步 →');}
+document.getElementById('ob-next').addEventListener('click',function(){showOb(obi+1);});
+document.getElementById('ob-skip').addEventListener('click',function(){showOb(OBSTEPS.length);});
+document.getElementById('help').addEventListener('click',function(){showOb(0);});
+(function(){try{if(!localStorage.getItem('parkmap_ob')){setTimeout(function(){showOb(0);},800);}}catch(e){}})();
 (function(){var q=new URLSearchParams(location.search).get('park');if(q!==null&&q!==''){var n=+q;if(Number.isInteger(n)&&PARKS[n]){setPick(n);setTimeout(function(){focusCard(n);},600);}}})();
