@@ -19,7 +19,8 @@
     "toys": "攀爬滑梯組、磨石子滑梯、擺盪繩、長形彈跳床、沙坑",
     "tip": "捷運石牌站轉公車；礫石/沙坑/草皮，玩完記得洗手",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E5%A3%AB%E6%9E%97%E5%8D%80%E5%A4%A9%E6%AF%8D%E5%85%AC%E5%9C%92",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 1,
@@ -41,7 +42,8 @@
     "toys": "無障礙滑梯、鳥巢鞦韆、無障礙鞦韆、旋轉台、音樂球/歡樂鼓/叮噹管、遊戲牆",
     "tip": "捷運圓山站步行約450公尺；七大遊戲區，記得帶水",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E5%8F%B0%E5%8C%97%E5%B8%82%E8%8A%B1%E5%8D%9A%E5%85%AC%E5%9C%92%E7%BE%8E%E8%A1%93%E5%9C%92%E5%8D%80%E5%85%B1%E8%9E%8D%E9%81%8A%E6%88%B2%E5%A0%B4",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 2,
@@ -63,7 +65,8 @@
     "toys": "貝殼磨石子溜滑梯、章魚腳攀爬網、5種特色鞦韆、躲藏小島、夏季戲水區",
     "tip": "北市最大河濱遊戲場；可租單車；夏天戲水帶換洗衣物",
     "nav": "https://www.google.com/maps/search/?api=1&query=台北市大佳河濱公園海洋遊戲場",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 3,
@@ -85,7 +88,8 @@
     "toys": "31座溜滑梯、100組遊具、堤坡滑梯、海世界水樂園(夏季)、幸福小火車(假日50元)",
     "tip": "開放至22:00；夏季戲水週二休園；停幸福水漾/重新北側停車場",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E5%8C%97%E5%B8%82%E4%B8%89%E9%87%8D%E6%96%B0%E5%8C%97%E5%A4%A7%E9%83%BD%E6%9C%83%E5%85%AC%E5%9C%92%E7%86%8A%E7%8C%B4%E6%A3%AE%E6%A8%82%E5%9C%92",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 4,
@@ -107,7 +111,8 @@
     "toys": "三層樓遊戲塔(三種溜滑梯)、攀爬網、消防跑酷場、水管隧道、沙坑、鞦韆",
     "tip": "鶯歌火車站文化路出口步行約7分；有親子廁所、水龍頭",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E5%8C%97%E5%B8%82%E9%B6%AF%E6%AD%8C%E5%8F%A4%E9%90%98%E6%A8%93%E5%85%AC%E5%9C%92",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 5,
@@ -129,7 +134,8 @@
     "toys": "4米機捷車廂溜滑梯、迴旋溜滑梯、4.5米攀爬網、吊環、鑽籠、獨木橋",
     "tip": "全台首座捷運主題；接近麗園路側；可順遊吉祥影視公園",
     "nav": "https://www.google.com/maps/search/?api=1&query=新北市林口樂活公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 6,
@@ -151,7 +157,8 @@
     "toys": "25公尺水管溜滑梯、巨大攀爬網、鳥巢鞦韆、攀爬架、涵管洞、彩色跑道",
     "tip": "24H開放；有乾淨廁所；附近有停車格，過馬路牽緊",
     "nav": "https://www.google.com/maps/search/?api=1&query=基隆市暖暖區暖暖運動公園遊戲場",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 7,
@@ -173,7 +180,8 @@
     "toys": "三層樓遊戲塔、管狀旋轉溜滑梯、磨石子溜滑梯、旋轉盤、鞦韆、沙坑、大象裝置",
     "tip": "公車到基隆醫院走6分；可順遊基隆塔、主普壇；帶水",
     "nav": "https://www.google.com/maps/search/?api=1&query=基隆市中正公園希望之丘遊戲場",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 8,
@@ -195,7 +203,8 @@
     "toys": "鸚鵡螺溜滑梯、大草原、掃帚裝置、自行車道、海景步道",
     "tip": "海邊風大帶外套；順遊智能海洋館、海科館、望幽谷",
     "nav": "https://www.google.com/maps/search/?api=1&query=基隆市潮境公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 9,
@@ -217,7 +226,8 @@
     "toys": "水果磨石子溜滑梯(橘子/蘋果/西瓜/葡萄)、攀爬網、跳格子、軟墊鋪面",
     "tip": "在南興市場中央；無雨就是遊樂場；市場周邊找車位",
     "nav": "https://www.google.com/maps/search/?api=1&query=基隆市七堵區正光公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 10,
@@ -239,7 +249,8 @@
     "toys": "雲朵彈跳床、森林挑戰場(6關16設施)、水閘門/取水螺旋/水道沙坑",
     "tip": "有廁所；停CITY PARKING三民站/新永和市場；順遊三民運動公園",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E6%A1%83%E5%9C%92%E5%B8%82%E5%8D%97%E5%B4%81%E6%BA%AA%E7%AC%AC%E4%B8%80%E6%B2%B3%E6%BF%B1%E5%85%AC%E5%9C%92%E9%81%8A%E6%88%B2%E5%A0%B4",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 11,
@@ -261,7 +272,8 @@
     "toys": "50米滾輪溜滑梯、沙坑、盪鞦韆、生態湖/步道/大草原",
     "tip": "國道2號南桃園交流道旁；草原適合野餐墊放電",
     "nav": "https://www.google.com/maps/search/?api=1&query=%E6%A1%83%E5%9C%92%E5%B8%82%E9%A2%A8%E7%A6%BE%E5%85%AC%E5%9C%92",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 12,
@@ -283,7 +295,8 @@
     "toys": "5米松鼠組合遊具、彎曲溜滑梯、松果小屋、鋼軌滑索、沙坑戲水池、攀岩斜坡",
     "tip": "滑翔車假日8-18時午休1hr雨天休；沙坑假日9-17時；有洗腳區",
     "nav": "https://www.google.com/maps/search/?api=1&query=桃園市大有梯田生態公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 13,
@@ -305,7 +318,8 @@
     "toys": "秘密樹屋、奇幻挑戰塔、水道機關、森林跑酷、大沙坑、共融鞦韆",
     "tip": "有廁所、YouBike；水區帶換洗衣物；緊鄰建國新村可順遊",
     "nav": "https://www.google.com/maps/search/?api=1&query=桃園市中壢區光明公園",
-    "approx": true
+    "approx": true,
+    "type": "公園"
   },
   {
     "id": 14,
@@ -327,7 +341,8 @@
     "toys": "彩色山丘磨石子滑梯、滑草區、滑軌、溜索、沙坑、盪鞦韆、小孩版旋轉鞦韆",
     "tip": "老字號翻新旗艦場；森林遮蔭多；假日早點到；有廁所洗手台",
     "nav": "https://www.google.com/maps/search/?api=1&query=桃園市陽明運動公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 15,
@@ -349,7 +364,8 @@
     "toys": "環狀石頭滑梯、迷你攀岩場、三索吊橋、座椅式溜索、跳樁、平衡木、濕地花園/落羽松/水上棧道",
     "tip": "捷運昆陽站步行600m；有免費+收費停車場、乾淨公廁；無障礙通道推車可；可遠眺101",
     "nav": "https://www.google.com/maps/search/?api=1&query=台北市南港區新新公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 16,
@@ -371,7 +387,8 @@
     "toys": "28m滾輪溜滑梯、兩層樓穀倉遊戲塔、溜索、鞦韆、無障礙遊具、噴泉戲水河道(夏季)",
     "tip": "捷運環狀線景安站；緊鄰運動中心+停車場，可玩一整天；玩水帶換洗衣物",
     "nav": "https://www.google.com/maps/search/?api=1&query=新北市中和錦和運動公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 17,
@@ -393,7 +410,8 @@
     "toys": "3座高低磨石子滑道、攀岩抱石牆、單索攀爬、三角立體攀爬架、單板/鳥巢鞦韆、搖搖馬、簡易極限運動場",
     "tip": "開放07:00-22:00；國道3號橋下遮蔭；有籃球場；滑板場注意安全",
     "nav": "https://www.google.com/maps/search/?api=1&query=基隆市大武崙森林運動公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 18,
@@ -415,7 +433,8 @@
     "toys": "16m長頸鹿遊戲塔(攀岩/爬網/空中鑽籠/旋轉滑梯)、森林滑索、小丘磨石滑梯、森林水道、礫石坑、多種鞦韆、高架棧道",
     "tip": "遊戲塔滑索開放8:00-17:30雨天休；3樓以上建議高年級；免費停車場+公廁；大草坪可野餐",
     "nav": "https://www.google.com/maps/search/?api=1&query=桃園市八德區楓樹腳公園",
-    "approx": false
+    "approx": false,
+    "type": "公園"
   },
   {
     "id": 19,
@@ -437,6 +456,52 @@
     "toys": "飛碟滑梯、32米滑索、滑軌、鞦韆、旋轉盤、沙坑",
     "tip": "週邊付費停車；帶野餐墊",
     "nav": "https://www.google.com/maps/search/?api=1&query=台中市中央公園飛行美樂地",
+    "approx": true,
+    "type": "公園"
+  },
+  {
+    "id": 20,
+    "name": "嘉義市立博物館",
+    "district": "東區",
+    "city": "嘉義",
+    "lat": 23.4871617,
+    "lon": 120.4517201,
+    "power": 1,
+    "age": "3-12歲",
+    "stay": "約半天",
+    "tags": [
+      "東區"
+    ],
+    "image": "",
+    "source": "https://myjourney.tw/museum-chiayi/",
+    "type": "室內",
+    "addr": "嘉義市東區忠孝路275-1號",
+    "kid": "50元吹冷氣放電",
+    "toys": "兒童遊戲室、繪畫、火車模型",
+    "tip": "兒童廳先取票；穿襪子；休週一",
+    "nav": "https://www.google.com/maps/search/?api=1&query=嘉義市立博物館"
+  },
+  {
+    "id": 21,
+    "name": "觀音山林梢步道",
+    "district": "五股",
+    "city": "新北",
+    "lat": 25.129555,
+    "lon": 121.4180249,
+    "power": 1,
+    "age": "全齡",
+    "stay": "約1小時",
+    "tags": [
+      "五股"
+    ],
+    "image": "",
+    "source": "https://curly.com.tw/treetop-walkway/",
+    "type": "步道",
+    "addr": "新北市五股區凌雲路三段130號",
+    "kid": "樹冠散步15分鐘",
+    "toys": "高架木棧道、展望、休息區",
+    "tip": "24H；免費停車；假日早到",
+    "nav": "https://www.google.com/maps/search/?api=1&query=觀音山林梢步道",
     "approx": true
   }
 ]

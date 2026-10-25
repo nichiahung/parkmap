@@ -18,15 +18,17 @@ const PARKS=[
 {power:3,city:"新北",dist:"中和區",name:"錦和運動公園",addr:"新北市中和區錦和路350-1號",lat:24.9925973,lng:121.4883975,kid:"28公尺超長滾輪溜滑梯！再爬兩層樓穀倉遊戲塔，夏天直接跳進噴泉戲水河道涼快",toys:"28m滾輪溜滑梯、兩層樓穀倉遊戲塔、溜索、鞦韆、無障礙遊具、噴泉戲水河道(夏季)",age:"全齡",tip:"捷運環狀線景安站；緊鄰運動中心+停車場，可玩一整天；玩水帶換洗衣物",info:"https://bobowin.blog/2016-10-03-107/",nav:"https://www.google.com/maps/search/?api=1&query=新北市中和錦和運動公園",img:"badges/16-jinhe-roller.png"},
 {power:1,city:"基隆",dist:"安樂區",name:"大武崙森林運動公園",addr:"基隆市安樂區基金一路129巷",lat:25.1371187,lng:121.7098929,kid:"橋下遊戲場大改造！3座高低磨石滑道選一條衝下來，再去攀岩抱石牆當小猴子",toys:"3座高低磨石子滑道、攀岩抱石牆、單索攀爬、三角立體攀爬架、單板/鳥巢鞦韆、搖搖馬、簡易極限運動場",age:"2-12歲(短滑梯2-12歲)",tip:"開放07:00-22:00；國道3號橋下遮蔭；有籃球場；滑板場注意安全",info:"https://www.abic.com.tw/place/view/id/13963",nav:"https://www.google.com/maps/search/?api=1&query=基隆市大武崙森林運動公園",img:"badges/17-dawulun-mountain.png"},
 {power:3,city:"桃園",dist:"八德區",name:"楓樹腳公園",addr:"桃園市八德區介壽路二段940號旁",lat:24.9345892,lng:121.2952431,kid:"16公尺長頸鹿肚子裡冒險！爬上桃園最高溜滑梯從長頸鹿背上滑下來，再坐森林滑索飛一圈",toys:"16m長頸鹿遊戲塔(攀岩/爬網/空中鑽籠/旋轉滑梯)、森林滑索、小丘磨石滑梯、森林水道、礫石坑、多種鞦韆、高架棧道",age:"1-2樓6-12歲/3-4樓13歲以上",tip:"遊戲塔滑索開放8:00-17:30雨天休；3樓以上建議高年級；免費停車場+公廁；大草坪可野餐",info:"https://playfulpark-taoyuan.tycg.gov.tw/playgrounds/1",nav:"https://www.google.com/maps/search/?api=1&query=桃園市八德區楓樹腳公園",img:"badges/18-fengshujiao-giraffe.png"},
+{power:1,city:"嘉義",dist:"東區",name:"嘉義市立博物館",addr:"嘉義市東區忠孝路275-1號",lat:23.4871617,lng:120.4517201,type:"室內",kid:"50元吹冷氣放電！兒童廳攀爬畫畫看書，還能看小火車跑過嘉義街景模型",toys:"兒童遊戲室、繪畫區、繪本區、火車街景模型、交趾陶展",age:"3-12歲",tip:"兒童廳限時開放先取票；穿襪子；休週一；後方地下停車場",info:"https://myjourney.tw/museum-chiayi/",nav:"https://www.google.com/maps/search/?api=1&query=嘉義市立博物館",img:""},
+{power:1,city:"新北",dist:"五股",name:"觀音山林梢步道",addr:"新北市五股區凌雲路三段130號(觀音山遊客中心下方停車場)",lat:25.1295550,lng:121.4180249,approx:true,type:"步道",kid:"樹冠上散步15分鐘！高架木棧道穿過林梢，推車長輩都輕鬆，還能看三重高樓展望",toys:"800米高架木棧道、展望點、有頂休息區、觀鷹",age:"全齡",tip:"24H；遊客中心旁免費停車；假日一位難求早點到；第二段接公路再轉出",info:"https://curly.com.tw/treetop-walkway/",nav:"https://www.google.com/maps/search/?api=1&query=觀音山林梢步道",img:""},
 {power:3,city:"台中",dist:"西屯",name:"中央公園飛行美樂地",addr:"台中市西屯區中央公園內(導航設中央公園飛行美樂地)",lat:24.1960825,lng:120.6504380,approx:true,kid:"飛碟降落了！爬上飛碟繩網再咻下來，全台最長32米雙軌滑索一次滑到對面",toys:"飛碟組合滑梯、32米雙軌滑索、15米滑軌、30米環形滑軌、360度離心鞦韆、旋轉盤、打擊鼓、沙坑",age:"5-12歲",tip:"園區67公頃很大；週邊付費停車場；有ubike；帶野餐墊可待半天",info:"https://adontrip.com/blog/70596/",nav:"https://www.google.com/maps/search/?api=1&query=台中市中央公園飛行美樂地",img:""}
 ];
-const BADGES=["badges/00-tianmu-trampoline.png","badges/01-huabo-butterfly.png","badges/02-dajia-octopus.png","badges/03-metro-bear.png","badges/04-yingge-bell.png","badges/05-lohas-train.png","badges/06-nuannuan-sun.png","badges/07-hope-hillstar.png","badges/08-chaojing-spiral.png","badges/09-zhengguang-fruit.png","badges/10-nankan-river.png","badges/11-fenghe-rice.png","badges/12-dayou-terrace.png","badges/13-guangming-treehouse.png","badges/14-yangming-grasslide.png","badges/15-xinxin-zipline.png","badges/16-jinhe-roller.png","badges/17-dawulun-mountain.png","badges/18-fengshujiao-giraffe.png",""];
+const BADGES=["badges/00-tianmu-trampoline.png","badges/01-huabo-butterfly.png","badges/02-dajia-octopus.png","badges/03-metro-bear.png","badges/04-yingge-bell.png","badges/05-lohas-train.png","badges/06-nuannuan-sun.png","badges/07-hope-hillstar.png","badges/08-chaojing-spiral.png","badges/09-zhengguang-fruit.png","badges/10-nankan-river.png","badges/11-fenghe-rice.png","badges/12-dayou-terrace.png","badges/13-guangming-treehouse.png","badges/14-yangming-grasslide.png","badges/15-xinxin-zipline.png","badges/16-jinhe-roller.png","badges/17-dawulun-mountain.png","badges/18-fengshujiao-giraffe.png","","",""];
 PARKS.forEach(function(p){ if(p.img){ p.img=p.img.replace(/^badges\//,'../badges/').replace(/^photos\//,'../photos/'); } });
 for(var bi=0;bi<BADGES.length;bi++){ BADGES[bi]=BADGES[bi].replace(/^badges\//,'../badges/'); }
 var map=new maplibregl.Map({container:'map',style:'https://basemaps.cartocdn.com/gl/positron-gl-style.json',center:[121.45,25.03],zoom:10,attributionControl:false});
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
 var markers={};
-var CITYC={"台北":"#2D7DD2","新北":"#1F8A5B","基隆":"#184E77","桃園":"#C08A2D","台中":"#7C3AED"};
+var CITYC={"台北":"#2D7DD2","新北":"#1F8A5B","基隆":"#184E77","桃園":"#C08A2D","台中":"#7C3AED","嘉義":"#B45309"};
 PARKS.forEach(function(p,i){
 var wrap=document.createElement('div');
 wrap.style.cssText='width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer';
@@ -37,6 +39,11 @@ wrap.addEventListener('click',function(){focusCard(i);});
 markers[i]=m;});
 var grid=document.getElementById('grid'),count=document.getElementById('count');
 var activeCity="全部";var activePower=0;
+var activeType="全部";
+function ptype(p){ return p.type||"公園"; }
+var TYPEDEFS=["公園","室內","步道"];
+function buildType(){ var bar=document.getElementById('typebar'); var defs=["全部"].concat(TYPEDEFS); var html=""; for(var k=0;k<defs.length;k++){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&PARKS[i].city!==activeCity)continue; if(defs[k]==="全部"||ptype(PARKS[i])===defs[k])n++; } html+='<button data-y="'+defs[k]+'" class="'+(activeType===defs[k]?'on':'')+'">'+defs[k]+' '+n+'</button>'; } bar.innerHTML=html; }
+document.getElementById('typebar').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; activeType=e.target.dataset.y; buildType();render(); });
 var TAGDEFS=[["有沙坑",["沙坑"]],["可玩水",["戲水","水道","噴泉","水樂園","玩水","戲水池"]],["溜索滑索",["溜索","滑索","滑翔"]],["攀爬",["攀爬","攀岩","跑酷","挑戰","吊橋","吊環","抱石"]],["鞦韆",["鞦韆"]],["可野餐",["野餐","大草原","大草坪"]],["有遮蔭",["遮蔭","森林"]]];var activeTags=[];
 function matchTags(p){ if(!activeTags.length)return true; var t=p.toys+" "+p.tip; for(var k=0;k<activeTags.length;k++){ var ok=false; for(var d=0;d<TAGDEFS.length;d++){ if(TAGDEFS[d][0]===activeTags[k]){ var kws=TAGDEFS[d][1]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])!==-1){ok=true;break;} } break; } } if(!ok)return false; } return true; }
 function tagCount(label){ var n=0; for(var i=0;i<PARKS.length;i++){ if(activeCity!=="全部"&&PARKS[i].city!==activeCity)continue; var t=PARKS[i].toys+" "+PARKS[i].tip; for(var d=0;d<TAGDEFS.length;d++){ if(TAGDEFS[d][0]===label){ var kws=TAGDEFS[d][1]; for(var j=0;j<kws.length;j++){ if(t.indexOf(kws[j])!==-1){n++;break;} } break; } } } return n; }
@@ -58,9 +65,9 @@ return '<div class="card" data-i="'+i+'"><div>'+ph+'</div><div class="body">'+
 '<div class="btns"><a class="a1" href="'+p.nav+'" target="_blank">\u5c0e\u822a</a><a class="a2" href="'+p.info+'" target="_blank">\u4ecb\u7d39</a></div><button type="button" class="pick" data-i="'+i+'">\u5c31\u662f\u9019\u5ea7 \u2192 \u7f6e\u9802\u65b9\u4fbf\u627e</button>'+
 '</div></div>';}
 function render(){
-var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||PARKS[i].city===activeCity)&&matchTags(PARKS[i])&&(activePower===0||PARKS[i].power===activePower);});
+var idx=PARKS.map(function(p,i){return i;}).filter(function(i){return (activeCity==="全部"||PARKS[i].city===activeCity)&&matchTags(PARKS[i])&&(activeType==="全部"||ptype(PARKS[i])===activeType)&&(activePower===0||PARKS[i].power===activePower);});
 grid.innerHTML=idx.map(function(i){return card(PARKS[i],i);}).join('');
-count.textContent='共 '+idx.length+' 座'+(activeTags.length?'・'+activeTags.join('+'):'')+(activePower?'・'+'⚡'.repeat(activePower):'');
+count.textContent='共 '+idx.length+' 座'+(activeTags.length?'・'+activeTags.join('+'):'')+(activeType==="全部"?'':'・'+activeType)+(activePower?'・'+'⚡'.repeat(activePower):'');
 Object.keys(markers).forEach(function(k){markers[k].remove();});
 idx.forEach(function(i){markers[i].addTo(map);});
 if(idx.length===1){var s=PARKS[idx[0]];map.flyTo({center:[s.lng,s.lat],zoom:14});}
@@ -76,5 +83,5 @@ document.getElementById('toolbar').addEventListener('click',function(e){
 if(e.target.tagName!=='BUTTON')return;
 document.querySelectorAll('#toolbar button').forEach(function(b){b.classList.remove('on');});
 e.target.classList.add('on');activeCity=e.target.dataset.c;buildTags();buildPower();render();});
-buildTags();buildPower();render();
+buildTags();buildType();buildPower();render();
 (function(){var q=new URLSearchParams(location.search).get('park');if(q!==null&&q!==''){var n=+q;if(Number.isInteger(n)&&PARKS[n]){setPick(n);setTimeout(function(){focusCard(n);},600);}}})();
