@@ -127,6 +127,15 @@
   #infobody .btn-info{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
   #sidebar[hidden]{display:none}
   #sb-toggle{display:none}
+  #intro{position:fixed;inset:0;z-index:40;background:rgba(33,29,29,.45);display:flex;align-items:center;justify-content:center;padding:20px}
+  #intro[hidden]{display:none}
+  .ob-card{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .ob-step{font-size:16px;line-height:1.8;min-height:110px}
+  .ob-step b{color:var(--brand)}
+  .ob-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .ob-btns button{border-radius:10px;padding:10px 16px;font-size:14px;font-weight:800;cursor:pointer;min-height:44px;font-family:var(--font)}
+  #intro-skip{border:1.5px solid #e4d6c3;background:#fff}
+  #intro-next{border:1.5px solid var(--ink);background:var(--ink);color:#fff}
   @media (max-width:800px){
     #sidebar{top:auto;bottom:0;left:0;right:0;width:auto;max-width:none;border-radius:18px 18px 0 0;max-height:52%;z-index:30}
     #sidebar[hidden]{display:none}
@@ -193,7 +202,7 @@
   </div>
   <div id="sb-cat" role="tabpanel"></div>
   <div id="sb-flow" role="tabpanel" hidden></div>
-  <div id="logwrap"><div class="lg-head"><b>活動日誌</b><span>SIMULATION</span></div><ol id="loglist"></ol></div>
+  <div id="logwrap"><details open><summary class="lg-head"><b>活動日誌</b><span>SIMULATION</span></summary><ol id="loglist"></ol></details></div>
 </aside>
 <button id="sb-toggle" type="button">清單</button>
 
@@ -203,7 +212,15 @@
   <button id="h-flows" type="button" class="on"><span class="ic">〜</span><span>關係線</span></button>
   <button id="h-log" type="button"><span class="ic">☰</span><span>日誌</span></button>
   <button id="h-tour" type="button"><span class="ic">▶</span><span>導覽</span></button>
+  <button id="h-home" type="button"><span class="ic">◎</span><span>全景</span></button>
+  <button id="h-list" type="button"><span class="ic">▤</span><span>清單</span></button>
+  <button id="h-help" type="button"><span class="ic">？</span><span>說明</span></button>
 </nav>
+
+<div id="intro" hidden><div class="ob-card">
+<div class="ob-step" id="intro-text"></div>
+<div class="ob-btns"><button type="button" id="intro-skip">跳過</button><button type="button" id="intro-next">下一步 →</button></div>
+</div></div>
 
 <script type="module">
 const $ = (s) => document.querySelector(s);
@@ -249,7 +266,8 @@ const DATA = {
       'screenwall', 'parcel', 'slide', 'carousel', 'boat', 'monkey', 'trail', 'nautilus',
       'fruitstand', 'terrace', 'ufo', 'museum']
   },
-  labels: { world: '親子群島', island: '縣市島', item: '景點', flow: '順遊路線', time: '展示時間' },
+  labels: { world: '親子群島', island: '縣市島', item: '景點', flow: '順遊路線', time: '展示時間',
+    tabs: { cat: '主題分類', flow: '關係' }, searchPlaceholder: '搜尋景點、縣市、遊具…' },
   config: {
     R: 2.02, SPACING: 2.28, TOP: 0.65, WATER_Y: -0.18,
     brand: '#E85A24', green: '#1F8A5B',
@@ -288,9 +306,9 @@ const DATA = {
   ],
   // 跨海船線（離島接本島路網；階段 4 角色與順遊共用）
   ferries: [
-    { id: 'ferry-chiayico-penghu', from: 'chiayico', to: 'penghu', name: '嘉義—澎湖船', nameEn: 'Chiayi-Penghu ferry' },
-    { id: 'ferry-penghu-kinmen', from: 'penghu', to: 'kinmen', name: '澎湖—金門船', nameEn: 'Penghu-Kinmen ferry' },
-    { id: 'ferry-keelung-lienchiang', from: 'keelung', to: 'lienchiang', name: '基隆—連江船', nameEn: 'Keelung-Lienchiang ferry' }
+    { id: 'ferry-chiayico-penghu', from: 'chiayico', to: 'penghu', name: '嘉義—澎湖船', nameEn: 'Chiayi-Penghu ferry', evidence: 'pending', note: '展示用連接線，非實際航班' },
+    { id: 'ferry-penghu-kinmen', from: 'penghu', to: 'kinmen', name: '澎湖—金門船', nameEn: 'Penghu-Kinmen ferry', evidence: 'pending', note: '展示用連接線，非實際航班' },
+    { id: 'ferry-keelung-lienchiang', from: 'keelung', to: 'lienchiang', name: '基隆—連江船', nameEn: 'Keelung-Lienchiang ferry', evidence: 'pending', note: '展示用連接線，非實際航班' }
   ],
   // 真實景點資料（b/app.js PARKS 逐筆核對；嘉義併入嘉義市）
   parks: {
@@ -355,7 +373,13 @@ const DATA = {
     '中央公園飛行美樂地': { power: 3, city: '台中', dist: '西屯', kid: '飛碟降落了！爬上飛碟繩網再咻下來，全台最長32米雙軌滑索一次滑到對面', toys: '飛碟組合滑梯、32米雙軌滑索、15米滑軌、30米環形滑軌、360度離心鞦韆、旋轉盤、打擊鼓、沙坑', age: '5-12歲', tip: '園區67公頃很大；週邊付費停車場；有ubike；帶野餐墊可待半天', addr: '台中市西屯區中央公園內(導航設中央公園飛行美樂地)', nav: 'https://www.google.com/maps/search/?api=1&query=台中市中央公園飛行美樂地', info: 'https://adontrip.com/blog/70596/' }
   },
   flows: [],   // 階段 4 建立關係線
-  story: { mode: 'none', stages: [] },
+  story: { mode: 'clock', autoPlay: false, stageDuration: 4,
+    stages: [
+      { id: 'morning', label: '上午出發', description: '從台北出發，先去天母公園熱身', startMinute: 540, endMinute: 660, activeIslandIds: ['taipei'], activeItemIds: ['tianmu'] },
+      { id: 'noon', label: '中午野餐', description: '到桃園風禾公園草原野餐', startMinute: 660, endMinute: 810, activeIslandIds: ['taoyuan'], activeItemIds: ['fenghe'] },
+      { id: 'afternoon', label: '下午放電', description: '到基隆潮境公園看海放電', startMinute: 810, endMinute: 1020, activeIslandIds: ['keelung'], activeItemIds: ['chaojing'] },
+      { id: 'dusk', label: '黃昏回家', description: '到新北大都會公園玩到點燈', startMinute: 1020, endMinute: 1170, activeIslandIds: ['newtaipei'], activeItemIds: ['xiongmusen'] }
+    ] },
   environment: {
     startMinutes: 600, minutesPerSecond: 10,
     // 分鐘, skyTop, horizon, sunColor, sunI, hemiSky, hemiGround, hemiI, night, water
@@ -376,6 +400,25 @@ const DATA = {
 };
 
 const MODEL_NAMES = new Set(DATA.meta.modelPrototypes);
+
+/* ---------- 項目正規化（引擎只讀 items[]；parkDetail 只當來源留底） ---------- */
+function normalizeItems(d) {
+  const POWER_NAMES = ['', '輕量放電', '中度放電', '重度放電'];
+  const TAG_KEYS = [['沙坑', '玩沙'], ['戲水', '玩水'], ['玩水', '玩水'], ['水道', '玩水'], ['噴泉', '玩水'], ['溜索', '溜索'], ['滑索', '溜索'], ['鞦韆', '鞦韆'], ['攀爬', '攀爬'], ['攀岩', '攀爬'], ['跑酷', '攀爬'], ['野餐', '野餐'], ['草原', '野餐'], ['草坪', '野餐'], ['遮蔭', '遮蔭'], ['森林', '遮蔭'], ['無障礙', '無障礙'], ['廁所', '廁所'], ['公廁', '廁所'], ['停車', '停車']];
+  for (const it of d.items) {
+    const s = d.parkDetail[it.name] || {};
+    it.summary = s.kid || it.summary;
+    it.facts = (s.toys || '').split('、').filter((x) => x).slice(0, 3);
+    it.metrics = [];
+    if (s.power) it.metrics.push({ label: '放電', value: '⚡'.repeat(s.power), note: POWER_NAMES[s.power], kind: 'actual' });
+    if (s.toys) it.metrics.push({ label: '遊具', value: String(s.toys.split('、').filter((x) => x).length), unit: '種', kind: 'actual' });
+    it.tags = [];
+    const hay = (s.toys || '') + ' ' + (s.tip || '');
+    for (const pair of TAG_KEYS) { if (hay.indexOf(pair[0]) !== -1 && it.tags.indexOf(pair[1]) === -1) it.tags.push(pair[1]); }
+    it.age = s.age || ''; it.tip = s.tip || ''; it.addr = s.addr || '';
+    it.nav = s.nav || ''; it.info = s.info || ''; it.power = s.power || 0;
+  }
+}
 
 /* ---------- DATA 驗證 ---------- */
 function validateDATA(d) {
@@ -456,6 +499,21 @@ function validateDATA(d) {
       if (!dd.nav || !dd.info) throw new Error('景點缺少連結：' + n);
     }
   }
+  for (const it of d.items) {
+    if (!it.id || !it.islandId || !it.name || !it.model) throw new Error('項目缺少基本欄位');
+    if (!d.islands.some((i) => i.id === it.islandId)) throw new Error('項目無對應島嶼：' + it.id);
+    if (!Array.isArray(it.facts) || !it.facts.length) throw new Error('項目缺少重點：' + it.id);
+    if (!Array.isArray(it.metrics)) throw new Error('項目缺少數字磚：' + it.id);
+  }
+  for (const f of d.ferries || []) {
+    if (['documented', 'thematic', 'pending'].indexOf(f.evidence) === -1) throw new Error('關係證據等級無效：' + f.id);
+  }
+  if (d.story && d.story.mode === 'clock') {
+    for (const s of d.story.stages || []) {
+      for (const id of s.activeIslandIds || []) if (!d.islands.some((i) => i.id === id)) throw new Error('導覽階段無對應島嶼：' + s.id);
+      for (const id of s.activeItemIds || []) if (!d.items.some((i) => i.id === id)) throw new Error('導覽階段無對應項目：' + s.id);
+    }
+  }
   // 路網連通性：橋樑相鄰＋船線，全部島嶼須連通
   {
     const idOf = new Map(d.islands.map((i) => [i.id, i]));
@@ -507,6 +565,7 @@ boot().catch((err) => {
 
 async function boot() {
   loadmsg('檢查資料…');
+  normalizeItems(DATA);
   validateDATA(DATA);
 
   loadmsg('載入 Three.js（CDN）…');
@@ -526,7 +585,7 @@ async function boot() {
     envMinutes: DATA.environment.startMinutes,
     selectedIsland: null,
     userInteracted: false, dead: false,
-    net: null, islandMeshes: new Map(), labelObjs: new Map()
+    net: null, islandMeshes: new Map(), labelObjs: new Map(), itemPos: new Map()
   };
   let dirty = true;
   // localStorage：讀寫都 try/catch，不可阻止展示
@@ -790,7 +849,7 @@ async function boot() {
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', isl.name + '，' + (p ? p.count + ' 個景點' : '景點資料待補') + '；點擊查看');
     el.title = '點擊查看' + isl.name;
-    el.addEventListener('click', (ev) => { ev.stopPropagation(); state.userInteracted = true; selectIsland(isl.id, true); });
+    el.addEventListener('click', (ev) => { ev.stopPropagation(); state.userInteracted = true; state.selectedItemId = null; selectIsland(isl.id, true); });
     el.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectIsland(isl.id, true); }
     });
@@ -1490,6 +1549,7 @@ async function boot() {
     const model = MODELS[it.model];
     if (!model) throw new Error('模型原型未實作：' + it.model);
     const rng = rngFor('model:' + it.id);
+    state.itemPos.set(itemId, new THREE.Vector3(ox + lx, TOP, oz + lz));
     kitBegin(ox + lx, oz + lz, TOP, scale, yaw, it.id, isl.id, rng, isl.color);
     model();
     kitCtx = null;
@@ -2121,14 +2181,42 @@ async function boot() {
       }
     }
   }
-  function highlightItem(itemId) {
+  function highlightItem(itemId, HexColor) {
     clearItemHighlight();
-    if (!itemId || !state.modelIndex) return;
+    applyStageHighlight();
+    if (!itemId || !state.modelIndex) { dirty = true; return; }
     const arr = state.modelIndex.byItem.get(itemId) || [];
+    const C = HexColor || CORAL;
     for (const r of arr) {
-      r.mesh.setColorAt(r.instanceId, r.baseColor.clone().lerp(CORAL, 0.22));
+      r.mesh.setColorAt(r.instanceId, r.baseColor.clone().lerp(C, 0.22));
       if (r.mesh.instanceColor) r.mesh.instanceColor.needsUpdate = true;
     }
+    dirty = true;
+  }
+  function applyStageHighlight() {
+    if (!state.modelIndex || !state.storyStage) return;
+    const st = (DATA.story.stages || []).find((s) => s.id === state.storyStage);
+    if (!st) return;
+    for (const iid of st.activeItemIds || []) {
+      if (iid === state.selectedItemId) continue; // 選取 coral 優先
+      const arr = state.modelIndex.byItem.get(iid) || [];
+      for (const r of arr) {
+        r.mesh.setColorAt(r.instanceId, r.baseColor.clone().lerp(YELLOW, 0.22));
+        if (r.mesh.instanceColor) r.mesh.instanceColor.needsUpdate = true;
+      }
+    }
+  }
+  const YELLOW = new THREE.Color('#fcea8b');
+  function flyTo(target, off) {
+    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
+    if (right.lengthSq() > 1e-6) {
+      right.normalize();
+      if ($('#info').classList.contains('show')) target.addScaledVector(right, 1.2); // 左側卡片構圖補償
+    }
+    const pos = target.clone().add(off);
+    fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
+    if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
   }
   function selectIsland(id, flyTo) {
     state.selectedIsland = id;
@@ -2148,10 +2236,7 @@ async function boot() {
     log('選擇島嶼：' + isl.name + '島');
     if (flyTo) {
       const { x, z } = axialToWorld(isl.q, isl.r);
-      const target = new THREE.Vector3(x, TOP, z);
-      const pos = target.clone().add(new THREE.Vector3(2.75, 5.3, 6.2));
-      fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
-      if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+      flyTo(new THREE.Vector3(x, TOP, z), new THREE.Vector3(2.75, 5.3, 6.2));
     }
     dirty = true;
   }
@@ -2165,12 +2250,9 @@ async function boot() {
     selectIsland(it.islandId, false);
     showItemCard(it);
     if (flyTo) {
-      const isl = DATA.islands.find((i) => i.id === it.islandId);
-      const c = axialToWorld(isl.q, isl.r);
-      const target = new THREE.Vector3(c.x, TOP + 0.3, c.z);
-      const pos = target.clone().add(new THREE.Vector3(1.6, 2.5, 3.2));
-      fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
-      if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+      const p = state.itemPos.get(itemId);
+      const target = p ? p.clone().add(new THREE.Vector3(0, 0.5, 0)) : new THREE.Vector3(0, TOP, 0);
+      flyTo(target, new THREE.Vector3(1.6, 2.5, 3.2));
     }
     log('選擇景點：' + it.name);
     dirty = true;
@@ -2184,9 +2266,7 @@ async function boot() {
       const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
       const ca = axialToWorld(A.q, A.r), cb = axialToWorld(B.q, B.r);
       const target = new THREE.Vector3((ca.x + cb.x) / 2, 0.5, (ca.z + cb.z) / 2);
-      const pos = target.clone().add(new THREE.Vector3(2.75, 5.3, 6.2));
-      fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
-      if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+      flyTo(target, new THREE.Vector3(2.75, 5.3, 6.2));
     }
     log('查看關係：' + f.name);
     dirty = true;
@@ -2202,6 +2282,18 @@ async function boot() {
     li.textContent = hh + ':' + mm + ' ' + msg;
     ol.prepend(li);
     while (ol.children.length > 50) ol.lastChild.remove();
+  }
+
+  /* ---------- 階段 3：新手說明 ---------- */
+  const INTRO = ['<b>第 1 步・拖曳旋轉</b><br>拖曳旋轉群島，滾輪縮放，點島嶼與模型看內容。', '<b>第 2 步・搜尋與卡片</b><br>右側搜尋景點、看卡片、點導航出發。', '<b>第 3 步・關係線與導覽</b><br>開關係線看船運連接，按導覽走一日行程。'];
+  let introIdx = 0;
+  function showIntro(i) {
+    introIdx = i;
+    const ob = $('#intro');
+    if (i >= INTRO.length) { ob.hidden = true; try { localStorage.setItem('island3d-intro', '1'); } catch (e) {} return; }
+    $('#intro-text').innerHTML = INTRO[i];
+    $('#intro-next').textContent = (i === INTRO.length - 1 ? '開始逛 →' : '下一步 →');
+    ob.hidden = false;
   }
 
   /* ---------- 階段 3：HUD ---------- */
@@ -2221,9 +2313,7 @@ async function boot() {
       state.savedPolar = controls.minPolarAngle;
       controls.minPolarAngle = 0.02;
       const target = controls.target.clone();
-      const pos = target.clone().add(new THREE.Vector3(0.01, 42, 6));
-      fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
-      if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+      flyTo(target, new THREE.Vector3(0.01, 42, 6));
       log('進入鳥瞰');
     } else {
       state.bird = false; b.classList.remove('on');
@@ -2241,22 +2331,34 @@ async function boot() {
     dirty = true;
   });
   $('#h-log').addEventListener('click', () => {
-    const sb = $('#sidebar');
-    sb.hidden = !sb.hidden;
+    $('#sidebar').hidden = false;
+    const d = document.querySelector('#logwrap details');
+    if (d) { d.open = !d.open; if (d.open) d.scrollIntoView({ block: 'nearest' }); }
   });
-  const TOUR_STOPS = [[360, 'taipei'], [720, 'taoyuan'], [1080, 'keelung'], [1260, 'newtaipei']];
+  $('#h-home').addEventListener('click', () => { framePanorama(); log('回到全景'); dirty = true; });
+  $('#h-list').addEventListener('click', () => { $('#sidebar').hidden = !$('#sidebar').hidden; });
+  $('#h-help').addEventListener('click', () => { showIntro(0); });
   let tourTimer = null, tourIdx = 0;
   $('#h-tour').addEventListener('click', (e) => {
     const b = e.currentTarget;
-    if (tourTimer) { clearInterval(tourTimer); tourTimer = null; b.classList.remove('on'); log('停止導覽'); return; }
+    const stages = DATA.story.stages || [];
+    if (tourTimer) {
+      clearInterval(tourTimer); tourTimer = null;
+      state.storyStage = null; highlightItem(state.selectedItemId);
+      b.classList.remove('on'); log('停止導覽'); dirty = true; return;
+    }
+    if (!stages.length) return;
     b.classList.add('on'); log('開始一日導覽');
     const step = () => {
-      const st = TOUR_STOPS[tourIdx % TOUR_STOPS.length]; tourIdx++;
-      state.envMinutes = st[0]; applyEnv(); updateClock(); persist();
-      selectIsland(st[1], true);
+      const st = stages[tourIdx % stages.length]; tourIdx++;
+      state.storyStage = st.id; // 內容時序獨立於環境日夜，不動 envMinutes
+      const islId = (st.activeIslandIds || [])[0];
+      if (islId) selectIsland(islId, true);
+      highlightItem(state.selectedItemId);
+      log('導覽：' + st.label + ' — ' + st.description);
     };
     step();
-    tourTimer = setInterval(step, 4000);
+    tourTimer = setInterval(step, (DATA.story.stageDuration || 4) * 1000);
   });
 
   /* ---------- 階段 3：側欄接線 ---------- */
@@ -2293,7 +2395,7 @@ async function boot() {
     for (const isl of DATA.islands) {
       const items = islandItems(isl.id);
       const showIsl = matchQ(q, isl.name, isl.en, isl.summary);
-      const hitItems = items.filter((it) => { const d = PARK_DETAIL[it.name] || {}; return matchQ(q, it.name, isl.summary, d.toys || '', d.tip || '', d.addr || ''); });
+      const hitItems = items.filter((it) => matchQ(q, it.name, it.summary, (it.facts || []).join(' '), (it.tags || []).join(' '), it.tip || '', it.addr || ''));
       if (q.trim() && !showIsl && !hitItems.length) continue;
       const list = (q.trim() && !showIsl) ? hitItems : items;
       const open = (q.trim() || isl.id === state.selectedIsland) ? ' open' : '';
@@ -2326,7 +2428,7 @@ async function boot() {
   function wireChips(box) {
     box.querySelectorAll('button.chip[data-item]').forEach((b) => b.addEventListener('click', () => selectItem(b.dataset.item, true)));
     box.querySelectorAll('button.chip[data-flow]').forEach((b) => b.addEventListener('click', () => selectFlow(b.dataset.flow, true)));
-    box.querySelectorAll('button.chip[data-island]').forEach((b) => b.addEventListener('click', () => selectIsland(b.dataset.island, true)));
+    box.querySelectorAll('button.chip[data-island]').forEach((b) => b.addEventListener('click', () => { state.selectedItemId = null; selectIsland(b.dataset.island, true); }));
   }
 
   function showIslandCard(isl) {
@@ -2345,27 +2447,21 @@ async function boot() {
   }
 
   function showItemCard(it) {
-    const d = PARK_DETAIL[it.name] || {};
     const isl = DATA.islands.find((i) => i.id === it.islandId);
     $('#infoname').textContent = it.name;
-    $('#infosub').textContent = (isl ? isl.name + '・' : '') + (d.age || '');
-    const facts = (d.toys || '').split('、').filter((s) => s).slice(0, 3);
+    $('#infosub').textContent = (isl ? isl.name + '・' : '') + (it.age || '');
     const box = $('#infobody');
-    let html = '<img class="thumb" data-thumb="' + it.id + '" alt="' + esc(it.name) + '模型縮圖" src="' + THUMB_HOLDER + '">';
-    html += '<p>' + esc(d.kid || it.summary) + '</p>';
-    if (facts.length) html += '<ul class="facts">' + facts.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul>';
-    html += '<div class="metrics">';
-    if (d.power) html += '<div class="metric"><b>' + '⚡'.repeat(d.power) + '</b><span>' + POWER_TXT[d.power] + '</span></div>';
-    if (d.toys) html += '<div class="metric"><b>' + d.toys.split('、').filter((s) => s).length + '</b><span>種遊具</span></div>';
-    html += '</div>';
-    if (d.tip) html += '<p>提醒：' + esc(d.tip) + '</p>';
-    if (d.addr) html += '<p>地址：' + esc(d.addr) + '</p>';
+    let html = '<img class="thumb" data-thumb="' + it.id + '" alt="' + esc(it.name) + '模型縮圖" src="' + makeThumb(it) + '">';
+    html += '<p>' + esc(it.summary) + '</p>';
+    if (it.facts && it.facts.length) html += '<ul class="facts">' + it.facts.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul>';
+    if (it.metrics && it.metrics.length) html += '<div class="metrics">' + it.metrics.slice(0, 3).map((m) => '<div class="metric"><b>' + esc(m.value) + '</b><span>' + esc(m.label) + '</span></div>').join('') + '</div>';
+    if (it.tip) html += '<p>提醒：' + esc(it.tip) + '</p>';
+    if (it.addr) html += '<p>地址：' + esc(it.addr) + '</p>';
     html += '<div class="btns">';
-    if (d.nav) html += '<a class="btn-nav" href="' + d.nav + '" target="_blank" rel="noopener">導航</a>';
-    if (d.info) html += '<a class="btn-info" href="' + d.info + '" target="_blank" rel="noopener">介紹</a>';
+    if (it.nav) html += '<a class="btn-nav" href="' + it.nav + '" target="_blank" rel="noopener">導航</a>';
+    if (it.info) html += '<a class="btn-info" href="' + it.info + '" target="_blank" rel="noopener">介紹</a>';
     html += '</div><p class="src">資料來源：b/app.js PARKS・provided</p>';
     box.innerHTML = html;
-    makeThumb(it);
   }
 
   function showFlowCard(f) {
@@ -2381,18 +2477,14 @@ async function boot() {
   }
 
   const THUMB_HOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" rx="12" fill="#f3e9d8"/><text x="80" y="92" font-size="46" text-anchor="middle" fill="#b48560">島</text></svg>');
-  let thumbRenderer = null;
+  let thumbRT = null;
   const thumbCache = new Map();
+  const thumbCanvas = document.createElement('canvas'); thumbCanvas.width = thumbCanvas.height = 160;
   function makeThumb(it) {
     if (thumbCache.has(it.id)) return thumbCache.get(it.id);
     thumbCache.set(it.id, THUMB_HOLDER);
     try {
-      if (!thumbRenderer) {
-        thumbRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        thumbRenderer.setSize(160, 160);
-        thumbRenderer.outputColorSpace = THREE.SRGBColorSpace;
-        thumbRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-      }
+      if (!thumbRT) thumbRT = new THREE.WebGLRenderTarget(160, 160);
       const keep = kitParts.length;
       const rng = rngFor('thumb:' + it.id);
       kitBegin(0, 0, 0, 1, 0, it.id, it.islandId, rng, '#E85A24');
@@ -2404,12 +2496,14 @@ async function boot() {
       const key = new THREE.DirectionalLight(0xfff1de, 2.2);
       key.position.set(3, 5, 4); sc.add(key);
       const grp = new THREE.Group();
-      const pv = new THREE.Vector3(), pq = new THREE.Quaternion(), ps = new THREE.Vector3();
+      const ps = new THREE.Vector3();
+      const tempMats = [];
       for (const pt of parts) {
         const glow = pt.materialClass === 'glow';
         const mt = glow
           ? new THREE.MeshStandardMaterial({ color: pt.color, emissive: new THREE.Color('#ffc777'), emissiveIntensity: 0.7 })
           : new THREE.MeshStandardMaterial({ color: pt.color, roughness: 0.8 });
+        tempMats.push(mt);
         const m = new THREE.Mesh(KG[pt.kind], mt);
         m.position.setFromMatrixPosition(pt.matrix);
         m.quaternion.setFromRotationMatrix(pt.matrix);
@@ -2423,18 +2517,34 @@ async function boot() {
       const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
       cam.position.set(c.x + sz * 0.9, c.y + sz * 0.7, c.z + sz * 0.9);
       cam.lookAt(c);
-      thumbRenderer.render(sc, cam);
-      const out = thumbRenderer.domElement.toDataURL('image/png');
+      renderer.setRenderTarget(thumbRT);
+      renderer.render(sc, cam);
+      const px = new Uint8Array(160 * 160 * 4);
+      renderer.readRenderTargetPixels(thumbRT, 0, 0, 160, 160, px);
+      renderer.setRenderTarget(null);
+      const ctx2 = thumbCanvas.getContext('2d');
+      const img2 = ctx2.createImageData(160, 160);
+      for (let y = 0; y < 160; y++) img2.data.set(px.subarray((159 - y) * 160 * 4, (160 - y) * 160 * 4), y * 160 * 4);
+      ctx2.putImageData(img2, 0, 0);
+      const out = thumbCanvas.toDataURL('image/png');
       thumbCache.set(it.id, out);
+      for (const mt of tempMats) mt.dispose();
       const img = document.querySelector('img.thumb[data-thumb="' + it.id + '"]');
-      if (img) img.src = out;
+      if (img && img.src !== out) img.src = out;
+      dirty = true;
     } catch (e) { /* 縮圖失敗保留佔位，不阻止展示 */ }
     return thumbCache.get(it.id);
   }
 
   $('#sidebar').hidden = matchMedia('(max-width: 800px)').matches; // 與 CSS 同一把尺，手機預設收起
+  $('#tab-cat').textContent = DATA.labels.tabs.cat;
+  $('#tab-flow').textContent = DATA.labels.tabs.flow;
+  $('#sbq').placeholder = DATA.labels.searchPlaceholder;
   renderSidebar();
   log('全台親子島載入完成，22 島就緒');
+  $('#intro-next').addEventListener('click', () => showIntro(introIdx + 1));
+  $('#intro-skip').addEventListener('click', () => showIntro(INTRO.length));
+  try { if (!localStorage.getItem('island3d-intro')) setTimeout(() => showIntro(0), 900); } catch (e) {}
 
   /* ---------- 尺寸變化 ---------- */
   new ResizeObserver(() => {
