@@ -638,6 +638,7 @@ async function boot() {
 
   const parkOf = (name) => DATA.parks[name] || null;
   const shallowMats = [], foamMats = [], labelAnchors = [];
+  const baseParts = []; // {geo, x, y, z, color, island}，迴圈後建成 6 個 InstancedMesh
 
   for (const [islandNo, isl] of DATA.islands.entries()) {
     const { x, z } = axialToWorld(isl.q, isl.r);
@@ -659,28 +660,13 @@ async function boot() {
     g.add(top);
     state.islandMeshes.set(isl.id, { group: g, topMat, baseColor: topMat.color.clone(), accent: new THREE.Color(isl.color) });
 
-    // 側壁（與島面同相位，向下延伸到水面以下；幾何材質共用，夜間由 applyEnv 統一調色）
-    const wall = new THREE.Mesh(WALL_GEO, WALL_MAT);
-    wall.position.y = (TOP + WATER_Y - 0.5) / 2; g.add(wall);
-
-    // 頂緣彩色圖案帶（高 0.16）
-    const band = new THREE.Mesh(BAND_GEO,
-      new THREE.MeshStandardMaterial({ color: isl.color, roughness: 0.8 }));
-    band.position.y = TOP - 0.08; g.add(band);
-
-    // 六角形步道環（中心線外接半徑 1.8、寬 0.28）＋路緣
-    const curb = new THREE.Mesh(CURB_GEO, CURB_MAT);
-    curb.rotation.y = 0; curb.position.y = TOP + 0.006; curb.receiveShadow = true; g.add(curb);
-    const path = new THREE.Mesh(PATH_GEO, PATH_MAT);
-    path.position.y = TOP + 0.012; path.receiveShadow = true; g.add(path);
-
-    // 外圈淺水環＋白色泡沫環
-    const shallowMat = SHALLOW_MAT;
-    const shallow = new THREE.Mesh(SHALLOW_GEO, shallowMat);
-    shallow.position.y = WATER_Y + 0.02; shallow.renderOrder = 1; g.add(shallow);
-    const foamMat = FOAM_MAT;
-    const foam = new THREE.Mesh(FOAM_GEO, foamMat);
-    foam.position.y = WATER_Y + 0.03; foam.renderOrder = 2; g.add(foam);
+    // 島體基底：只收集矩陣（top 因逐島 UV 不共用；其餘 6 件迴圈後實例化）
+    baseParts.push({ geo: 'wall', x, y: (TOP + WATER_Y - 0.5) / 2, z, color: null, island: isl.id });
+    baseParts.push({ geo: 'band', x, y: TOP - 0.08, z, color: isl.color, island: isl.id });
+    baseParts.push({ geo: 'curb', x, y: TOP + 0.006, z, color: null, island: isl.id });
+    baseParts.push({ geo: 'path', x, y: TOP + 0.012, z, color: null, island: isl.id });
+    baseParts.push({ geo: 'shallow', x, y: WATER_Y + 0.02, z, color: null, island: isl.id });
+    baseParts.push({ geo: 'foam', x, y: WATER_Y + 0.03, z, color: null, island: isl.id });
 
 
     // 島嶼 pill 標籤（前側崖邊）
@@ -714,6 +700,30 @@ async function boot() {
     labelAnchors.push(new THREE.Vector3(x, labelY, z + labelZ));
 
     islandGroup.add(g);
+  }
+
+  /* ---------- 島體基底實例化（6 draws 取代 132 個 Mesh） ---------- */
+  {
+    const G = { wall: WALL_GEO, band: BAND_GEO, curb: CURB_GEO, path: PATH_GEO, shallow: SHALLOW_GEO, foam: FOAM_GEO };
+    const M = { wall: WALL_MAT, band: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.8 }), curb: CURB_MAT, path: PATH_MAT, shallow: SHALLOW_MAT, foam: FOAM_MAT };
+    const m4 = new THREE.Matrix4(), col = new THREE.Color();
+    for (const key of Object.keys(G)) {
+      const list = baseParts.filter((p) => p.geo === key);
+      const im = new THREE.InstancedMesh(G[key], M[key], list.length);
+      list.forEach((p, i) => {
+        m4.makeTranslation(p.x, p.y, p.z);
+        im.setMatrixAt(i, m4);
+        im.setColorAt(i, p.color ? col.set(p.color) : col.set('#ffffff'));
+      });
+      im.instanceMatrix.needsUpdate = true;
+      if (im.instanceColor) im.instanceColor.needsUpdate = true;
+      im.userData.baseParts = list;
+      if (key === 'curb' || key === 'path') im.receiveShadow = true;
+      if (key === 'shallow') im.renderOrder = 1;
+      if (key === 'foam') im.renderOrder = 2;
+      world.add(im);
+      (state.baseMeshes = state.baseMeshes || []).push(im);
+    }
   }
 
   /* ---------- 橋（相鄰島嶼，9 片甲板＋小拱） ---------- */
@@ -1068,7 +1078,7 @@ async function boot() {
         part('box', sx * 0.18, 0.36, 0, 0.03, 0.03, 0.6, a);
         for (const sz of [-1, 1]) part('cylinder', sx * 0.18, 0.28, sz * 0.25, 0.025, 0.16, 0.025, PAL.wood);
       }
-      for (const sx of [-0.22, 0, 0.22]) part('cylinder', sx, 0.05, 0.02, 0.1, 0.03, 0.1, PAL.stone);
+      for (const sx of [-0.22, 0, 0.22]) part('cylinder', sx, 0.0875, 0.02, 0.035, 0.175, 0.035, PAL.stone);
     },
 
     stage() {
@@ -1164,7 +1174,7 @@ async function boot() {
       for (let i = 0; i < 3; i++) {
         const ang = i * Math.PI * 2 / 3 + 0.3;
         const px = Math.cos(ang) * 0.28, pz = Math.sin(ang) * 0.28;
-        part('cylinder', px, 0.44, pz, 0.025, 0.38, 0.025, PAL.cream);
+        part('cylinder', px, 0.395, pz, 0.025, 0.59, 0.025, PAL.cream);
         part('box', px, 0.27, pz, 0.16, 0.05, 0.22, i === 1 ? PAL.teal : PAL.coral, { ry: -ang });
       }
       part('sphere', 0, 1.05, 0, 0.1, 0.1, 0.1, PAL.yellow);
@@ -1179,6 +1189,7 @@ async function boot() {
       part('prism', 0.1, 0.7, 0, 0.52, 0.03, 0.5, PAL.cream, { rx: Math.PI / 2 });
       part('box', -0.08, 0.93, 0, 0.12, 0.08, 0.02, a);
       part('box', -0.32, 0.24, 0, 0.06, 0.12, 0.2, PAL.wood);
+      part('box', -0.08, 0.05, 0, 0.5, 0.1, 0.2, PAL.wood);
     },
     monkey() {
       const a = kitCtx.accent;
@@ -1188,6 +1199,7 @@ async function boot() {
       }
       part('hip', 0, 0.64, 0, 0.74, 0.24, 0.62, a);
       for (const y of [0.12, 0.24, 0.36]) part('box', 0.32, y, -0.28, 0.26, 0.03, 0.03, PAL.wood);
+      for (const sx of [0.19, 0.45]) part('cylinder', sx, 0.2, -0.28, 0.03, 0.4, 0.03, PAL.wood);
       part('cylinder', 0.1, 0.28, 0.16, 0.2, 0.32, 0.2, PAL.teal, { rz: Math.PI / 2 });
       for (const sx of [-1, 1]) {
         part('ico', sx * 0.14, 0.58, -0.04, 0.14, 0.17, 0.13, sx > 0 ? '#b08057' : PAL.cream);
@@ -1221,7 +1233,7 @@ async function boot() {
         part('torus', 0.03 * (i % 2 ? 1 : -1), 0.5 - i * 0.13, 0.02 * i, 0.5 - i * 0.05, 0.5 - i * 0.05, 0.12, i % 2 ? PAL.yellow : a, { rx: Math.PI / 2 });
       }
       part('rbox', 0.32, 0.18, 0.12, 0.28, 0.05, 0.54, PAL.wood, { rx: 0.35, ry: -0.5 });
-      part('cylinder', 0.38, 0.4, -0.18, 0.025, 0.3, 0.025, PAL.wood);
+      part('cylinder', 0.38, 0.1, -0.18, 0.025, 0.2, 0.025, PAL.wood);
     },
     fruitstand() {
       const a = kitCtx.accent;
@@ -1260,7 +1272,7 @@ async function boot() {
       part('cylinder', 0, 0.04, 0, 0.82, 0.08, 0.82, PAL.stone);
       for (let i = 0; i < 3; i++) {
         const ang = i * Math.PI * 2 / 3 + 0.5;
-        part('cylinder', Math.cos(ang) * 0.24, 0.2, Math.sin(ang) * 0.24, 0.035, 0.3, 0.035, PAL.ink);
+        part('cylinder', Math.cos(ang) * 0.24, 0.215, Math.sin(ang) * 0.24, 0.035, 0.43, 0.035, PAL.ink);
       }
       part('cylinder', 0, 0.43, 0, 0.9, 0.1, 0.9, a);
       part('dome', 0, 0.47, 0, 0.5, 0.38, 0.5, PAL.glass);
@@ -1412,7 +1424,7 @@ async function boot() {
     let made = 0;
     for (let attempt = 0; attempt < 96 && made < treeCount; attempt++) {
       const ang = attempt * 2.399963 + rng() * 0.16;
-      const rad = attempt < 52 ? 1.42 : 1.32;
+      const rad = attempt < 52 ? 1.3 : 1.2; // 樹幹在步道內緣(1.438)之內，樹冠微垂步道屬自然
       const tx = Math.cos(ang) * rad, tz = Math.sin(ang) * rad;
       if (!placedFree(placed, tx, tz, 0.23)) continue;
       addKitTree(ox + tx, oz + tz, isl.treeType, 0.78 + rng() * 0.22, rng, isl.id);
@@ -1430,7 +1442,7 @@ async function boot() {
     let pots = 0;
     for (let attempt = 0; attempt < 84 && pots < 3; attempt++) {
       const ang = attempt * 2.399963 + 0.6;
-      const pr = [1.53, 1.45, 1.59][attempt % 3];
+      const pr = [1.15, 1.08, 1.2][attempt % 3];
       const px = Math.cos(ang) * pr, pz = Math.sin(ang) * pr;
       if (!placedFree(placed, px, pz, 0.16)) continue;
       addPot(ox + px, oz + pz, isl.id, rng);
@@ -1440,7 +1452,7 @@ async function boot() {
     let benches = 0;
     for (let attempt = 0; attempt < 84 && benches < 2; attempt++) {
       const ang = attempt * 2.399963 + 1.1;
-      const br = [1.36, 1.46, 1.28][attempt % 3];
+      const br = [1.02, 1.1, 0.94][attempt % 3];
       const bx = Math.cos(ang) * br, bz = Math.sin(ang) * br;
       if (!placedFree(placed, bx, bz, 0.22)) continue;
       addBench(ox + bx, oz + bz, -ang, isl.id, rng);
@@ -1449,7 +1461,7 @@ async function boot() {
     }
     for (let k = 0; k < 12; k++) {
       const ang = k * Math.PI / 6;
-      const rad = k % 2 === 1 ? 1.86 : 1.86 * Math.cos(Math.PI / 6);
+      const rad = k % 2 === 1 ? 1.7 : 1.7 * Math.cos(Math.PI / 6);
       addRimLight(ox + Math.cos(ang) * rad, oz + Math.sin(ang) * rad, isl.id, rng);
     }
   }
@@ -1545,11 +1557,11 @@ async function boot() {
   function terrainHeight(x, z) {
     const r = Math.hypot(x, z);
     let h = -2.6 + fbm2(x * 0.04, z * 0.04) * 0.7;
-    const ridge = smoothstep(25, 52, r);
+    const ridge = smoothstep(31, 58, r);
     h += ridge * (4.2 + fbm2(x * 0.028 + 11, z * 0.028 - 7) * 5.5 + Math.abs(fbm2(x * 0.09, z * 0.09)) * 2);
-    h = THREE.MathUtils.lerp(h, Math.round(h * 2) / 2, 0.34 * smoothstep(27, 42, r));
+    h = THREE.MathUtils.lerp(h, Math.round(h * 2) / 2, 0.34 * smoothstep(33, 48, r));
     const front = (x * 0.24 + z * 0.87) / Math.max(r, 0.001);
-    h *= 1 - 0.34 * smoothstep(20, 46, r) * smoothstep(0.12, 0.82, front);
+    h *= 1 - 0.34 * smoothstep(30, 52, r) * smoothstep(0.12, 0.82, front);
     h = THREE.MathUtils.lerp(h, -2.4, smoothstep(66, 84, r));
     return h;
   }
@@ -1610,7 +1622,7 @@ async function boot() {
     const target = isMobile ? MODEL_CFG.backgroundTreesMobile : MODEL_CFG.backgroundTreesDesktop;
     for (let attempt = 0; attempt < target * 6 && coniferPos.length + broadPos.length < target; attempt++) {
       const ang = treeRng() * Math.PI * 2;
-      const rad = 17 + Math.pow(treeRng(), 0.82) * 38;
+      const rad = 30 + Math.pow(treeRng(), 0.82) * 30;
       const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
       const h = terrainHeight(x, z);
       if (h < 0.3) continue;
@@ -1722,39 +1734,34 @@ async function boot() {
     const woodMat = new THREE.MeshStandardMaterial({ color: PAL.wood, roughness: 0.9 });
     const lhAngle = 0.55, lhR = 31;
     const lx = worldCenter.x + Math.cos(lhAngle) * lhR, lz = worldCenter.z + Math.sin(lhAngle) * lhR;
-    const rock = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.8, 0.55, 7), rockMat);
-    rock.position.set(lx, WATER_Y + 0.14, lz); seaGroup.add(rock);
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.8, 2.4, 10), whiteMat);
-    tower.position.set(lx, WATER_Y + 1.6, lz); seaGroup.add(tower);
-    for (const yy of [0.95, 1.95]) {
-      const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.7, 0.34, 10), redMat);
-      stripe.position.set(lx, WATER_Y + yy, lz); seaGroup.add(stripe);
-    }
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), SEA_GLOW);
-    lamp.position.set(lx, WATER_Y + 2.95, lz); seaGroup.add(lamp);
-    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.55, 10), redMat);
-    cap.position.set(lx, WATER_Y + 3.3, lz); seaGroup.add(cap);
-
+    const NI = (g) => (g.index ? g.toNonIndexed() : g);
+    const seaRock = [NI(new THREE.CylinderGeometry(2.1, 2.8, 0.55, 7).translate(lx, WATER_Y + 0.14, lz))];
+    const seaWhite = [NI(new THREE.CylinderGeometry(0.55, 0.8, 2.4, 10).translate(lx, WATER_Y + 1.6, lz))];
+    const seaRed = [
+      NI(new THREE.CylinderGeometry(0.74, 0.7, 0.34, 10).translate(lx, WATER_Y + 0.95, lz)),
+      NI(new THREE.CylinderGeometry(0.74, 0.7, 0.34, 10).translate(lx, WATER_Y + 1.95, lz)),
+      NI(new THREE.ConeGeometry(0.62, 0.55, 10).translate(lx, WATER_Y + 3.3, lz))
+    ];
+    const seaLeaf = [], seaWood = [];
     const islets = [
       { a: 2.35, r: 36.5, s: 1.0 }, { a: 3.9, r: 33.5, s: 0.72 }, { a: 5.25, r: 40, s: 1.2 }
     ];
     for (const def of islets) {
       const ix = worldCenter.x + Math.cos(def.a) * def.r, iz = worldCenter.z + Math.sin(def.a) * def.r;
-      const isl = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25 * def.s, 0), rockMat);
-      isl.position.set(ix, WATER_Y + 0.25 * def.s, iz);
-      isl.scale.set(1.45, 0.55, 1.15);
-      seaGroup.add(isl);
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 1.1, 6).translate(0, 0.55, 0), woodMat);
-      trunk.position.set(ix + 0.35, WATER_Y + 0.55 * def.s, iz + 0.2);
-      seaGroup.add(trunk);
+      seaRock.push(NI(new THREE.IcosahedronGeometry(1.25 * def.s, 0).scale(1.45, 0.55, 1.15).translate(ix, WATER_Y + 0.25 * def.s, iz)));
+      seaWood.push(NI(new THREE.CylinderGeometry(0.08, 0.13, 1.1, 6).translate(0, 0.55, 0).translate(ix + 0.35, WATER_Y + 0.55 * def.s, iz + 0.2)));
       for (let k = 0; k < 4; k++) {
-        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.35, 4), leafMat);
-        leaf.position.set(ix + 0.35, WATER_Y + 1.35 * def.s, iz + 0.2);
-        leaf.rotation.set(0.55, k * Math.PI / 2, 0);
-        leaf.scale.setScalar(def.s);
-        seaGroup.add(leaf);
+        seaLeaf.push(NI(new THREE.ConeGeometry(0.4, 1.35, 4).rotateY(k * Math.PI / 2).rotateX(0.55).scale(def.s, def.s, def.s).translate(ix + 0.35, WATER_Y + 1.35 * def.s, iz + 0.2)));
       }
     }
+    const seaMesh = (list, mat) => {
+      const m = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(list, false), mat);
+      seaGroup.add(m); return m;
+    };
+    seaMesh(seaRock, rockMat); seaMesh(seaWhite, whiteMat); seaMesh(seaRed, redMat);
+    seaMesh(seaLeaf, leafMat); seaMesh(seaWood, woodMat);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), SEA_GLOW);
+    lamp.position.set(lx, WATER_Y + 2.95, lz); seaGroup.add(lamp);
   }
   const boatDefs = [];
   {
@@ -1964,7 +1971,7 @@ async function boot() {
     if (moved > 6) return;
     ptr.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(ptr, camera);
-    const pickables = islandGroup.children.concat(state.modelMeshes);
+    const pickables = islandGroup.children.concat(state.modelMeshes, state.baseMeshes || []);
     const hits = ray.intersectObjects(pickables, true);
     let id = null, hitItemId = null;
     for (const h of hits) {
@@ -1977,6 +1984,10 @@ async function boot() {
         }
         const islId = o.userData.islandIds && o.userData.islandIds[h.instanceId];
         if (islId) { id = islId.split('~')[0]; break; }
+        if (o.userData.baseParts && h.instanceId != null) {
+          const bp = o.userData.baseParts[h.instanceId];
+          if (bp) { id = bp.island; break; }
+        }
       }
       let p = o;
       while (p && !p.userData.islandId) p = p.parent;
