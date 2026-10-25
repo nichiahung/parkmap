@@ -3923,7 +3923,7 @@ async function boot() {
   const bh1 = $('#brand h1'), bpp = $('#brand p');
   if (bh1) { bh1.dataset.zh = DATA.meta.title; bh1.textContent = EN ? (bh1.dataset.en || DATA.meta.title) : DATA.meta.title; }
   if (bpp) { const zhs = DATA.meta.subtitle + '｜' + DATA.meta.audience; bpp.dataset.zh = zhs; bpp.textContent = EN ? (bpp.dataset.en || zhs) : zhs; }
-  document.title = DATA.meta.title + '｜' + DATA.labels.world + '・' + DATA.meta.subtitle;
+  if (!EN) document.title = DATA.meta.title + '｜' + DATA.labels.world + '・' + DATA.meta.subtitle;
   applyMotionPrefs();
   const onMediaChange = (mq, fn) => {
     if (mq.addEventListener) mq.addEventListener('change', fn);
