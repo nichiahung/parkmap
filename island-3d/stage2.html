@@ -1537,7 +1537,7 @@ async function boot() {
   const fbm2 = (x, z) => {
     let amp = 0.5, freq = 1, sum = 0, norm = 0;
     for (let i = 0; i < 4; i++) {
-      sum += terrainNoise.noise2D(x * freq, z * freq) * amp;
+      sum += terrainNoise.noise(x * freq, z * freq) * amp;
       norm += amp; amp *= 0.5; freq *= 2.02;
     }
     return sum / norm;
