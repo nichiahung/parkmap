@@ -375,10 +375,12 @@ const DATA = {
   flows: [],   // 階段 4 建立關係線
   story: { mode: 'clock', autoPlay: false, stageDuration: 4,
     stages: [
-      { id: 'morning', label: '上午出發', description: '從台北出發，先去天母公園熱身', startMinute: 540, endMinute: 660, activeIslandIds: ['taipei'], activeItemIds: ['tianmu'] },
-      { id: 'noon', label: '中午野餐', description: '到桃園風禾公園草原野餐', startMinute: 660, endMinute: 810, activeIslandIds: ['taoyuan'], activeItemIds: ['fenghe'] },
-      { id: 'afternoon', label: '下午放電', description: '到基隆潮境公園看海放電', startMinute: 810, endMinute: 1020, activeIslandIds: ['keelung'], activeItemIds: ['chaojing'] },
-      { id: 'dusk', label: '黃昏回家', description: '到新北大都會公園玩到點燈', startMinute: 1020, endMinute: 1170, activeIslandIds: ['newtaipei'], activeItemIds: ['xiongmusen'] }
+      { id: 'depart', label: '七點半出發', description: '從台北出發，先去天母公園熱身', startMinute: 450, endMinute: 570, activeIslandIds: ['taipei'], activeItemIds: ['tianmu'], activeFlowIds: [] },
+      { id: 'morning', label: '九點半上午', description: '到新北大都會公園挑戰堤坡樂園', startMinute: 570, endMinute: 720, activeIslandIds: ['newtaipei'], activeItemIds: ['xiongmusen'], activeFlowIds: [] },
+      { id: 'noon', label: '中午野餐', description: '到桃園風禾公園草原野餐', startMinute: 720, endMinute: 870, activeIslandIds: ['taoyuan'], activeItemIds: ['fenghe'], activeFlowIds: [] },
+      { id: 'afternoon', label: '下午放電', description: '到基隆潮境公園看海放電', startMinute: 870, endMinute: 990, activeIslandIds: ['keelung'], activeItemIds: ['chaojing'], activeFlowIds: [] },
+      { id: 'late', label: '四點半加碼', description: '到台中中央公園飛碟區再玩一輪', startMinute: 990, endMinute: 1080, activeIslandIds: ['taichung'], activeItemIds: ['centralpark'], activeFlowIds: [] },
+      { id: 'dusk', label: '六點回家', description: '到嘉義市立博物館吹冷氣收尾', startMinute: 1080, endMinute: 1170, activeIslandIds: ['chiayicity'], activeItemIds: ['chiayi-museum'], activeFlowIds: [] }
     ] },
   environment: {
     startMinutes: 600, minutesPerSecond: 10,
@@ -410,14 +412,21 @@ function normalizeItems(d) {
     it.summary = s.kid || it.summary;
     it.facts = (s.toys || '').split('、').filter((x) => x).slice(0, 3);
     it.metrics = [];
-    if (s.power) it.metrics.push({ label: '放電', value: '⚡'.repeat(s.power), note: POWER_NAMES[s.power], kind: 'actual' });
-    if (s.toys) it.metrics.push({ label: '遊具', value: String(s.toys.split('、').filter((x) => x).length), unit: '種', kind: 'actual' });
+    const si = d.islands.find((x) => x.id === it.islandId);
+    if (s.power) it.metrics.push({ label: '放電', value: '⚡'.repeat(s.power), note: POWER_NAMES[s.power], kind: 'actual', scope: si ? si.name : '', sourceIds: ['parks-appjs'] });
+    if (s.toys) it.metrics.push({ label: '遊具', value: String(s.toys.split('、').filter((x) => x).length), unit: '種', kind: 'actual', scope: si ? si.name : '', sourceIds: ['parks-appjs'] });
     it.tags = [];
     const hay = (s.toys || '') + ' ' + (s.tip || '');
     for (const pair of TAG_KEYS) { if (hay.indexOf(pair[0]) !== -1 && it.tags.indexOf(pair[1]) === -1) it.tags.push(pair[1]); }
     it.age = s.age || ''; it.tip = s.tip || ''; it.addr = s.addr || '';
     it.nav = s.nav || ''; it.info = s.info || ''; it.power = s.power || 0;
   }
+  d.flows = (d.ferries || []).map((f) => ({
+    id: f.id, fromIslandId: f.from, toIslandId: f.to, fromItemId: null, toItemId: null,
+    name: f.name, description: f.note || '', type: '順遊', direction: 'both',
+    payload: '親子出遊', actor: '家長與小朋友', evidence: f.evidence || 'pending',
+    contentMode: d.meta.mode, sourceIds: d.sources.map((s) => s.id)
+  }));
 }
 
 /* ---------- DATA 驗證 ---------- */
@@ -504,14 +513,20 @@ function validateDATA(d) {
     if (!d.islands.some((i) => i.id === it.islandId)) throw new Error('項目無對應島嶼：' + it.id);
     if (!Array.isArray(it.facts) || !it.facts.length) throw new Error('項目缺少重點：' + it.id);
     if (!Array.isArray(it.metrics)) throw new Error('項目缺少數字磚：' + it.id);
+    for (const m of it.metrics) { if (!m.label || m.value == null || !m.kind) throw new Error('數字磚缺少欄位：' + it.id); }
   }
   for (const f of d.ferries || []) {
     if (['documented', 'thematic', 'pending'].indexOf(f.evidence) === -1) throw new Error('關係證據等級無效：' + f.id);
+  }
+  if (!Array.isArray(d.flows) || !d.flows.length) throw new Error('缺少跨島關係 flows');
+  for (const f of d.flows) {
+    if (!d.islands.some((i) => i.id === f.fromIslandId) || !d.islands.some((i) => i.id === f.toIslandId)) throw new Error('關係端點無對應島嶼：' + f.id);
   }
   if (d.story && d.story.mode === 'clock') {
     for (const s of d.story.stages || []) {
       for (const id of s.activeIslandIds || []) if (!d.islands.some((i) => i.id === id)) throw new Error('導覽階段無對應島嶼：' + s.id);
       for (const id of s.activeItemIds || []) if (!d.items.some((i) => i.id === id)) throw new Error('導覽階段無對應項目：' + s.id);
+      if (!Array.isArray(s.activeFlowIds)) throw new Error('導覽階段缺少 activeFlowIds：' + s.id);
     }
   }
   // 路網連通性：橋樑相鄰＋船線，全部島嶼須連通
@@ -797,7 +812,12 @@ async function boot() {
     centers.reduce((n, c) => n + c.x, 0) / centers.length, 0,
     centers.reduce((n, c) => n + c.z, 0) / centers.length);
 
-  const parkOf = (name) => DATA.parks[name] || null;
+  const parkOf = (name) => {
+    const isl = DATA.islands.find((i) => i.name === name);
+    if (!isl) return null;
+    const items = DATA.items.filter((it) => it.islandId === isl.id);
+    return items.length ? { count: items.length, names: items.map((it) => it.name) } : null;
+  };
   const shallowMats = [], foamMats = [], labelAnchors = [];
   const baseParts = []; // {geo, x, y, z, color, island}，迴圈後建成 6 個 InstancedMesh
 
@@ -935,7 +955,7 @@ async function boot() {
   }
   // 跨海船線（水面虛線，pending 點線語意；路網同步建邊不斷網）
   for (const f of DATA.ferries) {
-    const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+    const A = DATA.islands.find((i) => i.id === (f.fromIslandId || f.from)), B = DATA.islands.find((i) => i.id === (f.toIslandId || f.to));
     const ca = axialToWorld(A.q, A.r), cb = axialToWorld(B.q, B.r);
     const g = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(ca.x, WATER_Y + 0.06, ca.z), new THREE.Vector3(cb.x, WATER_Y + 0.06, cb.z)]);
@@ -995,7 +1015,7 @@ async function boot() {
       link(na, mid); link(mid, nb);
     }
     for (const f of DATA.ferries || []) {
-      const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+      const A = DATA.islands.find((i) => i.id === (f.fromIslandId || f.from)), B = DATA.islands.find((i) => i.id === (f.toIslandId || f.to));
       if (!A || !B) throw new Error('船線端點無對應島嶼：' + f.id);
       let ba = -1, bb = -1, bd = Infinity;
       for (let i = 0; i < nodes.length; i++) {
@@ -2168,7 +2188,7 @@ async function boot() {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       selectIsland(null, false);
-      if (tourTimer) { clearInterval(tourTimer); tourTimer = null; $('#h-tour').classList.remove('on'); }
+      if (tourTimer) { clearInterval(tourTimer); tourTimer = null; state.storyStage = null; highlightItem(state.selectedItemId); const hb = $('#h-tour'); hb.classList.remove('on'); hb.querySelector('span:last-child').textContent = '導覽'; }
     }
   });
 
@@ -2207,19 +2227,26 @@ async function boot() {
     }
   }
   const YELLOW = new THREE.Color('#fcea8b');
-  function flyTo(target, off) {
-    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
-    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
-    if (right.lengthSq() > 1e-6) {
-      right.normalize();
-      if ($('#info').classList.contains('show')) target.addScaledVector(right, 1.2); // 左側卡片構圖補償
+  function flyCam(target, off, comp) {
+    if (comp !== false) {
+      const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+      const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
+      if (right.lengthSq() > 1e-6 && $('#info').classList.contains('show')) {
+        const pos0 = target.clone().add(off);
+        pos0.addScaledVector(right.normalize(), -1.2); // 卡片在左，鏡頭左移，主體落右側可視區
+        fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos0 };
+        if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos0); fly = null; }
+        dirty = true; return;
+      }
     }
     const pos = target.clone().add(off);
     fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
     if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+    dirty = true;
   }
-  function selectIsland(id, flyTo) {
+  function selectIsland(id, flyTo, keepItem) {
     state.selectedIsland = id;
+    if (!keepItem) state.selectedItemId = null;
     for (const [key, rec] of state.islandMeshes) {
       const on = key === id;
       rec.topMat.color.copy(rec.baseColor).lerp(CORAL, on ? 0.22 : 0);
@@ -2236,7 +2263,7 @@ async function boot() {
     log('選擇島嶼：' + isl.name + '島');
     if (flyTo) {
       const { x, z } = axialToWorld(isl.q, isl.r);
-      flyTo(new THREE.Vector3(x, TOP, z), new THREE.Vector3(2.75, 5.3, 6.2));
+      flyCam(new THREE.Vector3(x, TOP, z), new THREE.Vector3(2.75, 5.3, 6.2));
     }
     dirty = true;
   }
@@ -2247,26 +2274,27 @@ async function boot() {
     const it = ITEM_BY_ID.get(itemId);
     if (!it) return;
     state.selectedItemId = itemId;
-    selectIsland(it.islandId, false);
+    selectIsland(it.islandId, false, true);
     showItemCard(it);
     if (flyTo) {
       const p = state.itemPos.get(itemId);
       const target = p ? p.clone().add(new THREE.Vector3(0, 0.5, 0)) : new THREE.Vector3(0, TOP, 0);
-      flyTo(target, new THREE.Vector3(1.6, 2.5, 3.2));
+      flyCam(target, new THREE.Vector3(1.6, 2.5, 3.2));
     }
     log('選擇景點：' + it.name);
     dirty = true;
   }
   function selectFlow(flowId, flyTo) {
-    const f = DATA.ferries.find((x) => x.id === flowId);
+    const f = DATA.flows.find((x) => x.id === flowId);
     if (!f) return;
+    state.selectedItemId = null; highlightItem(null);
     showFlowCard(f);
     $('#info').classList.add('show');
     if (flyTo) {
-      const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+      const A = DATA.islands.find((i) => i.id === (f.fromIslandId || f.from)), B = DATA.islands.find((i) => i.id === (f.toIslandId || f.to));
       const ca = axialToWorld(A.q, A.r), cb = axialToWorld(B.q, B.r);
       const target = new THREE.Vector3((ca.x + cb.x) / 2, 0.5, (ca.z + cb.z) / 2);
-      flyTo(target, new THREE.Vector3(2.75, 5.3, 6.2));
+      flyCam(target, new THREE.Vector3(2.75, 5.3, 6.2));
     }
     log('查看關係：' + f.name);
     dirty = true;
@@ -2312,12 +2340,14 @@ async function boot() {
       state.bird = true; b.classList.add('on');
       state.savedPolar = controls.minPolarAngle;
       controls.minPolarAngle = 0.02;
+      state.birdView = { pos: camera.position.clone(), tgt: controls.target.clone() };
       const target = controls.target.clone();
-      flyTo(target, new THREE.Vector3(0.01, 42, 6));
+      flyCam(target, new THREE.Vector3(0.01, 42, 6), false);
       log('進入鳥瞰');
     } else {
       state.bird = false; b.classList.remove('on');
       controls.minPolarAngle = state.savedPolar != null ? state.savedPolar : THREE.MathUtils.degToRad(25);
+      if (state.birdView) flyCam(state.birdView.tgt, state.birdView.pos.clone().sub(state.birdView.tgt), false);
       log('離開鳥瞰');
     }
     dirty = true;
@@ -2330,13 +2360,14 @@ async function boot() {
     log(showFlows ? '顯示關係線' : '隱藏關係線');
     dirty = true;
   });
-  $('#h-log').addEventListener('click', () => {
+  $('#h-log').addEventListener('click', (e) => {
     $('#sidebar').hidden = false;
     const d = document.querySelector('#logwrap details');
     if (d) { d.open = !d.open; if (d.open) d.scrollIntoView({ block: 'nearest' }); }
+    e.currentTarget.classList.toggle('on', !!(d && d.open));
   });
   $('#h-home').addEventListener('click', () => { framePanorama(); log('回到全景'); dirty = true; });
-  $('#h-list').addEventListener('click', () => { $('#sidebar').hidden = !$('#sidebar').hidden; });
+  $('#h-list').addEventListener('click', (e) => { const sb = $('#sidebar'); sb.hidden = !sb.hidden; e.currentTarget.classList.toggle('on', !sb.hidden); });
   $('#h-help').addEventListener('click', () => { showIntro(0); });
   let tourTimer = null, tourIdx = 0;
   $('#h-tour').addEventListener('click', (e) => {
@@ -2345,13 +2376,15 @@ async function boot() {
     if (tourTimer) {
       clearInterval(tourTimer); tourTimer = null;
       state.storyStage = null; highlightItem(state.selectedItemId);
-      b.classList.remove('on'); log('停止導覽'); dirty = true; return;
+      b.classList.remove('on'); b.querySelector('span:last-child').textContent = '導覽'; log('停止導覽'); dirty = true; return;
     }
     if (!stages.length) return;
     b.classList.add('on'); log('開始一日導覽');
     const step = () => {
-      const st = stages[tourIdx % stages.length]; tourIdx++;
+      const n = tourIdx % stages.length;
+      const st = stages[n]; tourIdx++;
       state.storyStage = st.id; // 內容時序獨立於環境日夜，不動 envMinutes
+      b.querySelector('span:last-child').textContent = (n + 1) + '/' + stages.length + ' ' + st.label;
       const islId = (st.activeIslandIds || [])[0];
       if (islId) selectIsland(islId, true);
       highlightItem(state.selectedItemId);
@@ -2412,9 +2445,9 @@ async function boot() {
     const q = $('#sbq').value || '';
     const box = $('#sb-flow');
     let html = '';
-    for (const f of DATA.ferries) {
-      const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
-      if (!matchQ(q, f.name, A.name, B.name)) continue;
+    for (const f of DATA.flows) {
+      const A = DATA.islands.find((i) => i.id === f.fromIslandId), B = DATA.islands.find((i) => i.id === f.toIslandId);
+      if (!matchQ(q, f.name, f.description, A.name, B.name)) continue;
       html += '<button class="flowrow" data-flow="' + f.id + '">〜 ' + esc(f.name) + ' <small>(' + esc(A.name) + '↔' + esc(B.name) + '・待確認)</small></button>';
     }
     box.innerHTML = html || '<div class="sb-empty">找不到關係，換個關鍵字試試</div>';
@@ -2439,7 +2472,7 @@ async function boot() {
     let html = '<p>' + esc(isl.summary) + '</p>';
     const items = islandItems(isl.id);
     html += chipRow(items);
-    const rel = DATA.ferries.filter((f) => f.from === isl.id || f.to === isl.id);
+    const rel = DATA.flows.filter((f) => f.fromIslandId === isl.id || f.toIslandId === isl.id);
     if (rel.length) html += '<div class="chips">' + rel.map((f) => '<button class="chip" data-flow="' + f.id + '">〜 ' + esc(f.name) + '</button>').join('') + '</div>';
     if (!p) html += '<p>這一座島還沒有景點資料，歡迎之後補上在地好去處。</p>';
     box.innerHTML = html;
@@ -2454,18 +2487,18 @@ async function boot() {
     let html = '<img class="thumb" data-thumb="' + it.id + '" alt="' + esc(it.name) + '模型縮圖" src="' + makeThumb(it) + '">';
     html += '<p>' + esc(it.summary) + '</p>';
     if (it.facts && it.facts.length) html += '<ul class="facts">' + it.facts.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul>';
-    if (it.metrics && it.metrics.length) html += '<div class="metrics">' + it.metrics.slice(0, 3).map((m) => '<div class="metric"><b>' + esc(m.value) + '</b><span>' + esc(m.label) + '</span></div>').join('') + '</div>';
+    if (it.metrics && it.metrics.length) html += '<div class="metrics">' + it.metrics.slice(0, 3).map((m) => '<div class="metric"><b>' + esc(m.value) + esc(m.unit || '') + '</b><span>' + esc(m.label) + '</span></div>').join('') + '</div>';
     if (it.tip) html += '<p>提醒：' + esc(it.tip) + '</p>';
     if (it.addr) html += '<p>地址：' + esc(it.addr) + '</p>';
     html += '<div class="btns">';
     if (it.nav) html += '<a class="btn-nav" href="' + it.nav + '" target="_blank" rel="noopener">導航</a>';
     if (it.info) html += '<a class="btn-info" href="' + it.info + '" target="_blank" rel="noopener">介紹</a>';
-    html += '</div><p class="src">資料來源：b/app.js PARKS・provided</p>';
+    html += '</div><p class="src">資料來源：' + esc(DATA.sources[0].title) + '・' + esc(DATA.meta.mode) + '</p>';
     box.innerHTML = html;
   }
 
   function showFlowCard(f) {
-    const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+    const A = DATA.islands.find((i) => i.id === (f.fromIslandId || f.from)), B = DATA.islands.find((i) => i.id === (f.toIslandId || f.to));
     $('#infoname').textContent = f.name;
     $('#infosub').textContent = '跨海船運・待確認關係';
     const box = $('#infobody');
@@ -2540,6 +2573,8 @@ async function boot() {
   $('#tab-cat').textContent = DATA.labels.tabs.cat;
   $('#tab-flow').textContent = DATA.labels.tabs.flow;
   $('#sbq').placeholder = DATA.labels.searchPlaceholder;
+  $('#brand h1').textContent = DATA.meta.title;
+  $('#brand p').textContent = DATA.meta.subtitle + '｜' + DATA.meta.audience;
   renderSidebar();
   log('全台親子島載入完成，22 島就緒');
   $('#intro-next').addEventListener('click', () => showIntro(introIdx + 1));
