@@ -414,7 +414,12 @@ const DATA = {
     '觀音山林梢步道': { power: 1, city: '新北', dist: '五股', kid: '樹冠上散步15分鐘！高架木棧道穿過林梢，推車長輩都輕鬆，還能看三重高樓展望', toys: '800米高架木棧道、展望點、有頂休息區、觀鷹', age: '全齡', tip: '24H；遊客中心旁免費停車；假日一位難求早點到；第二段接公路再轉出', addr: '新北市五股區凌雲路三段130號(觀音山遊客中心下方停車場)', nav: 'https://www.google.com/maps/search/?api=1&query=觀音山林梢步道', info: 'https://curly.com.tw/treetop-walkway/' },
     '中央公園飛行美樂地': { power: 3, city: '台中', dist: '西屯', kid: '飛碟降落了！爬上飛碟繩網再咻下來，全台最長32米雙軌滑索一次滑到對面', toys: '飛碟組合滑梯、32米雙軌滑索、15米滑軌、30米環形滑軌、360度離心鞦韆、旋轉盤、打擊鼓、沙坑', age: '5-12歲', tip: '園區67公頃很大；週邊付費停車場；有ubike；帶野餐墊可待半天', addr: '台中市西屯區中央公園內(導航設中央公園飛行美樂地)', nav: 'https://www.google.com/maps/search/?api=1&query=台中市中央公園飛行美樂地', info: 'https://adontrip.com/blog/70596/' }
   },
-  flows: [],   // 階段 4 建立關係線
+  flows: [
+    { id: 'walk-taipei-newtaipei', fromIslandId: 'taipei', toIslandId: 'newtaipei', fromItemId: null, toItemId: null, name: '台北—新北順遊', description: '相鄰縣市順遊路線', type: '順遊', direction: 'both', payload: '親子出遊', payloadKind: 'basket', actor: '家長與小朋友', evidence: 'thematic', contentMode: 'provided', sourceIds: ['parks-appjs'] },
+    { id: 'walk-newtaipei-taoyuan', fromIslandId: 'newtaipei', toIslandId: 'taoyuan', fromItemId: null, toItemId: null, name: '新北—桃園順遊', description: '相鄰縣市順遊路線', type: '順遊', direction: 'both', payload: '親子出遊', payloadKind: 'basket', actor: '家長與小朋友', evidence: 'thematic', contentMode: 'provided', sourceIds: ['parks-appjs'] },
+    { id: 'walk-taipei-keelung', fromIslandId: 'taipei', toIslandId: 'keelung', fromItemId: null, toItemId: null, name: '台北—基隆順遊', description: '相鄰縣市順遊路線', type: '順遊', direction: 'both', payload: '親子出遊', payloadKind: 'basket', actor: '家長與小朋友', evidence: 'thematic', contentMode: 'provided', sourceIds: ['parks-appjs'] },
+    { id: 'walk-taoyuan-hsinchucity', fromIslandId: 'taoyuan', toIslandId: 'hsinchucity', fromItemId: null, toItemId: null, name: '桃園—新竹市順遊', description: '相鄰縣市順遊路線', type: '順遊', direction: 'both', payload: '親子出遊', payloadKind: 'basket', actor: '家長與小朋友', evidence: 'thematic', contentMode: 'provided', sourceIds: ['parks-appjs'] }
+  ],
   story: { mode: 'clock', autoPlay: false, stageDuration: 4,
     stages: [
       { id: 'depart', label: '七點半出發', description: '從台北出發，先去天母公園熱身', startMinute: 450, endMinute: 570, activeIslandIds: ['taipei'], activeItemIds: ['tianmu'], activeFlowIds: [] },
@@ -463,13 +468,13 @@ function normalizeItems(d) {
     it.age = s.age || ''; it.tip = s.tip || ''; it.addr = s.addr || '';
     it.nav = s.nav || ''; it.info = s.info || ''; it.power = s.power || 0;
   }
-  d.flows = (d.ferries || []).map((f) => ({
+  d.flows = (d.flows || []).concat((d.ferries || []).map((f) => ({
     id: f.id, fromIslandId: f.from, toIslandId: f.to, fromItemId: null, toItemId: null,
     name: f.name, description: f.note || '', type: '順遊', direction: 'both',
     payload: f.payload || '親子出遊', payloadKind: f.payloadKind || 'basket',
     actor: f.actor || '家長與小朋友', evidence: f.evidence || 'pending',
     contentMode: d.meta.mode, sourceIds: d.sources.map((s) => s.id)
-  }));
+  })));
 }
 
 /* ---------- DATA 驗證 ---------- */
@@ -1156,18 +1161,28 @@ async function boot() {
     '  float f = fract(u);',
     '  float duty = uPattern > 1.5 ? 0.3 : (uPattern > 0.5 ? 0.6 : 1.0);',
     '  bool keep = f <= duty;',
-    '  if (uBoth > 0.5 && duty < 1.0) keep = keep || fract(-u) <= duty;',
+        '  if (uBoth > 0.5 && duty < 1.0) keep = keep || fract(vUv.x * uLength * 5.0 + uTime * 1.4) <= duty;',
     '  if (!keep) discard;',
     '  gl_FragColor = vec4(uColor, uOpacity);',
     '}'
   ].join('\n');
 
+  const FERRY_EDGES = new Set();
+  for (const f of DATA.flows.filter((x) => x.evidence === 'pending')) {
+    const ends = nearestFlowNodes(f);
+    if (ends) { FERRY_EDGES.add(ends.from + '>' + ends.to); FERRY_EDGES.add(ends.to + '>' + ends.from); }
+  }
   function buildFlowRuntime() {
     for (const f of DATA.flows) {
       const ends = nearestFlowNodes(f);
       if (!ends) throw new Error('關係線找不到端點節點：' + f.id);
       const path = dijkstra(ends.from, ends.to);
       if (!path || !path.length) throw new Error('關係線無法尋路：' + f.id);
+      if (f.evidence !== 'pending') {
+        for (let k = 0; k + 1 < path.length; k++) {
+          if (FERRY_EDGES.has(path[k] + '>' + path[k + 1])) throw new Error('陸上順遊誤走跨海邊：' + f.id);
+        }
+      }
       const pts = path.map((idx) => {
         const n = state.net.nodes[idx];
         return new THREE.Vector3(n.x, n.y, n.z);
@@ -1184,7 +1199,7 @@ async function boot() {
           uLength: { value: rec.length },
           uPattern: { value: pattern },
           uBoth: { value: f.direction === 'both' ? 1 : 0 },
-          uDir: { value: f.direction === 'forward' ? 1 : (f.direction === 'both' ? 1 : 1) },
+          uDir: { value: f.direction === 'none' ? 0 : 1 },
           uOpacity: { value: 0.82 }
         },
         vertexShader: FLOW_VERT, fragmentShader: FLOW_FRAG,
@@ -1213,35 +1228,79 @@ async function boot() {
   state.flowPickMeshes = flowRecs.flatMap((r) => r.picks);
 
   /* ---------- chibi 角色零件（共用 InstancedMesh） ---------- */
+  function islandLoopRec(islId) {
+    const idx = [];
+    state.net.nodes.forEach((n, i) => { if (n.island === islId) idx.push(i); });
+    if (idx.length < 3) return null;
+    const isl = DATA.islands.find((i) => i.id === islId);
+    const c = axialToWorld(isl.q, isl.r);
+    const ang = (i) => Math.atan2(state.net.nodes[i].z - c.z, state.net.nodes[i].x - c.x);
+    idx.sort((a, b) => ang(a) - ang(b));
+    const pts = idx.map((i) => { const n = state.net.nodes[i]; return new THREE.Vector3(n.x, n.y, n.z); });
+    pts.push(pts[0].clone());
+    const curve = new PolyCurve(pts);
+    return { flow: null, pts, curve, length: curve.getLength(), islandId: islId, loop: true };
+  }
   function buildWalkers() {
     const names = WCFG.names;
     let ni = 0;
-    for (const f of DATA.flows) {
+    const mk = (o) => {
+      const rng = mulberry32(hashSeed('stage4:' + o.id));
+      const actor = o.actor;
+      const w = Object.assign({
+        speed: WCFG.walkSpeedMin + rng() * Math.max(0.01, WCFG.walkSpeedMax - WCFG.walkSpeedMin),
+        d: 0, dir: 1, pause: 0, pauseEnd: null, anim: 0, phase: rng(),
+        shirt: new THREE.Color(actor === 'student' ? '#1F8A5B' : '#E85A24').offsetHSL((rng() - 0.5) * 0.045, 0, (rng() - 0.5) * 0.08),
+        pants: new THREE.Color(rng() > 0.5 ? '#3d4a5a' : '#6b5f52'),
+        view: null
+      }, o);
+      walkers.push(w); walkerById.set(w.id, w);
+    };
+    const landFlows = DATA.flows.filter((f) => f.evidence !== 'pending');
+    for (const f of landFlows) {
       const rec = flowRuntime.get(f.id);
       if (!rec || !rec.length) continue;
-      for (let k = 0; k < WCFG.walkersPerFlow; k++) {
-        const actor = WCFG.actorKinds[k % WCFG.actorKinds.length];
-        const rng = mulberry32(hashSeed('stage4:' + f.id + ':' + k));
-        const speed = WCFG.walkSpeedMin + rng() * Math.max(0.01, WCFG.walkSpeedMax - WCFG.walkSpeedMin);
-        const startT = [0.9, 0.1, 0.45, 0.6][k % 4];
-        const dir = [1, -1, 1, -1][k % 4];
-        const w = {
-          id: 'w-' + f.id + '-' + k,
-          name: names[ni++ % names.length],
-          actor, actorLabel: actor === 'student' ? '學童' : '家長',
-          flowId: f.id,
-          payload: f.payload || '親子出遊', payloadKind: f.payloadKind || 'basket',
-          speed, d: startT * rec.length, dir,
-          pause: 0, pauseEnd: null, anim: 0, phase: rng(),
-          shirt: new THREE.Color(actor === 'student' ? '#1F8A5B' : '#E85A24').offsetHSL((rng() - 0.5) * 0.045, 0, (rng() - 0.5) * 0.08),
-          pants: new THREE.Color(rng() > 0.5 ? '#3d4a5a' : '#6b5f52'),
-          view: null
-        };
-        walkers.push(w); walkerById.set(w.id, w);
+      for (let k = 0; k < 2; k++) {
+        const actor = WCFG.actorKinds[ni % WCFG.actorKinds.length];
+        mk({ id: 'w-' + f.id + '-' + k, name: names[ni++ % names.length], actor,
+          actorLabel: actor === 'student' ? '學童' : '家長',
+          kind: 'flow', flowId: f.id, rec, islandId: null,
+          payload: f.payload || '親子出遊', payloadKind: ['basket', 'book', 'parcel'][ni % 3],
+          d: k === 0 ? 0 : rec.length, dir: k === 0 ? 1 : -1 });
       }
+    }
+    for (const islId of ['taipei', 'newtaipei', 'keelung', 'taoyuan']) {
+      const rec = islandLoopRec(islId);
+      if (!rec) continue;
+      const actor = WCFG.actorKinds[ni % WCFG.actorKinds.length];
+      mk({ id: 'w-loop-' + islId, name: names[ni++ % names.length], actor,
+        actorLabel: actor === 'student' ? '學童' : '家長',
+        kind: 'loop', flowId: null, rec, islandId: islId, payload: '', payloadKind: null });
     }
   }
   buildWalkers();
+  /* ---------- 船運載貨光點（船上無小人身體，只送貨） ---------- */
+  const ferryDots = [];
+  for (const f of DATA.flows.filter((x) => x.evidence === 'pending')) {
+    const rec = flowRuntime.get(f.id);
+    if (!rec || !rec.length) continue;
+    for (let k = 0; k < 2; k++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), new THREE.MeshBasicMaterial({ color: '#E85A24' }));
+      world.add(m);
+      ferryDots.push({ rec, mesh: m, d: (k * 0.5 + 0.1) * rec.length, dir: k === 0 ? 1 : -1, speed: 0.45 + k * 0.1 });
+    }
+  }
+  const _fdP = new THREE.Vector3(), _fdT = new THREE.Vector3();
+  function updateFerryDots(dt) {
+    for (const o of ferryDots) {
+      o.d += o.speed * dt * o.dir;
+      if (o.d >= o.rec.length) { o.d = o.rec.length; o.dir = -1; }
+      if (o.d <= 0) { o.d = 0; o.dir = 1; }
+      sampleFlow(o.rec, o.d, _fdP, _fdT);
+      o.mesh.position.copy(_fdP);
+      o.mesh.visible = o.rec.meshes[0].visible;
+    }
+  }
 
   const W_MAT = {
     body: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.82, metalness: 0 }),
@@ -1366,7 +1425,10 @@ async function boot() {
   }
 
   function walkerDest(w) {
-    const f = flowRuntime.get(w.flowId).flow;
+    if (w.kind === 'loop') return w.islandId;
+    const rec = flowRuntime.get(w.flowId);
+    if (!rec) return '';
+    const f = rec.flow;
     return (w.dir >= 0 ? f.toIslandId : f.fromIslandId) || '';
   }
   const islandName = (id) => {
@@ -1387,12 +1449,19 @@ async function boot() {
     if (!walkers.length) return;
     for (let wi = 0; wi < walkers.length; wi++) {
       const w = walkers[wi];
-      const rec = flowRuntime.get(w.flowId);
+      const rec = w.rec || flowRuntime.get(w.flowId);
       if (!rec) continue;
       const L = rec.length;
       const f = rec.flow;
       if (advance) {
-        if (w.pause > 0) {
+        if (w.kind === 'loop') {
+          w.d += w.speed * dt;
+          if (w.d >= L) {
+            w.d -= L;
+            log('巡邏：' + w.name + '（' + w.actorLabel + '）繞 ' + islandName(w.islandId) + ' 步道一圈', null);
+          }
+          w.anim += dt;
+        } else if (w.pause > 0) {
           w.pause -= dt;
           if (w.pause <= 0) {
             const atTo = w.pauseEnd === 'to';
@@ -1404,11 +1473,12 @@ async function boot() {
               w.d = 0; w.dir = 1;
             }
             w.pause = 0; w.pauseEnd = null;
+            const origin = (f.direction === 'both') ? here : islandName(f.fromIslandId);
             const dest = islandName(w.dir >= 0 ? f.toIslandId : f.fromIslandId);
-            log('出發：' + w.name + '（' + w.actorLabel + '）從 ' + here + ' 前往 ' + dest + '，搬運' + w.payload, w.flowId);
+            log('出發：' + w.name + '（' + w.actorLabel + '）從 ' + origin + ' 前往 ' + dest + '，搬運' + w.payload, w.flowId);
           }
         }
-        if (!(w.pause > 0)) {
+        else if (w.kind !== 'loop') {
           const before = w.d;
           w.d += w.speed * dt * w.dir;
           if (w.d >= L) {
@@ -1474,7 +1544,7 @@ async function boot() {
       // 名牌與搬運物
       const headTop = _wPos.y + 0.44 * s;
       const paused = w.pause > 0;
-      const status = paused ? '交接中' : ('前往' + islandName(walkerDest(w)));
+      const status = w.kind === 'loop' ? ('巡邏' + islandName(w.islandId) + '步道') : (paused ? '交接中' : ('前往' + islandName(walkerDest(w))));
       const text = w.name + '・' + status;
       if (w.view.labelText !== text) {
         w.view.labelText = text;
@@ -1501,7 +1571,7 @@ async function boot() {
     if (state.selectedFlowId) ids.add(state.selectedFlowId);
     if (state.selectedWalkerId) {
       const w = walkerById.get(state.selectedWalkerId);
-      if (w) ids.add(w.flowId);
+      if (w && w.flowId) ids.add(w.flowId);
     }
     if (state.selectedIsland) {
       for (const f of DATA.flows) {
@@ -2795,7 +2865,7 @@ async function boot() {
       flyCam(target, new THREE.Vector3(2.75, 5.3, 6.2));
     }
     setLogFilter(flowId);
-    log('查看關係：' + f.name, flowId);
+    log('查看關係：' + f.name);
     dirty = true;
   }
   function selectWalker(walkerId, flyTo) {
@@ -2809,7 +2879,7 @@ async function boot() {
     $('#info').classList.add('show');
     updateRelVisibility();
     if (flyTo) {
-      const rec = flowRuntime.get(w.flowId);
+      const rec = w.rec || flowRuntime.get(w.flowId);
       if (rec) {
         sampleFlow(rec, w.d, _wPos, _wTan);
         const target = _wPos.clone().add(new THREE.Vector3(0, 0.25, 0));
@@ -2817,7 +2887,7 @@ async function boot() {
       }
     }
     setLogFilter(w.flowId);
-    log('查看角色：' + w.name + '（' + w.actorLabel + '）', w.flowId);
+    log('查看角色：' + w.name + '（' + w.actorLabel + '）');
     dirty = true;
   }
 
@@ -3084,7 +3154,17 @@ async function boot() {
   }
 
   function showWalkerCard(w) {
-    const f = DATA.flows.find((x) => x.id === w.flowId);
+    const f = w.flowId ? DATA.flows.find((x) => x.id === w.flowId) : null;
+    if (!f) {
+      const isl = DATA.islands.find((i) => i.id === w.islandId);
+      $('#infoname').textContent = w.name;
+      $('#infosub').textContent = '模擬角色・' + w.actorLabel;
+      $('#infobody').innerHTML = '<div class="roleline">正在' + esc(isl ? isl.name : '') + '步道巡邏</div>'
+        + '<dl class="kv"><dt>任務</dt><dd>步道巡邏</dd>'
+        + '<dt>搬運物</dt><dd>無（徒步巡邏）</dd></dl>'
+        + '<p class="src">角色行為為 SIMULATION 模擬，非即時營運資料。</p>';
+      return;
+    }
     const rec = flowRuntime.get(w.flowId);
     const fA = f ? DATA.islands.find((i) => i.id === f.fromIslandId) : null;
     const fB = f ? DATA.islands.find((i) => i.id === f.toIslandId) : null;
@@ -3215,6 +3295,7 @@ async function boot() {
       updateBoats(simTime);
       updateFlowTime(simTime);
       updateWalkers(dt, true);
+      updateFerryDots(dt);
       dirty = true;
     }
     if (fly) {
