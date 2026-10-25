@@ -228,7 +228,7 @@
   </div>
   <div id="sb-cat" role="tabpanel"></div>
   <div id="sb-flow" role="tabpanel" hidden></div>
-  <div id="logwrap"><details open><summary class="lg-head"><b>活動日誌</b><span>SIMULATION</span></summary><div class="lg-filter"><select id="logflow" aria-label="依關係篩選活動日誌"><option value="">全部關係</option></select></div><ol id="loglist"></ol></details></div>
+  <div id="logwrap"><details open><summary class="lg-head"><b>活動日誌</b><span>SIMULATION</span></summary><div class="lg-filter"><select id="logflow" aria-label="依關係篩選活動日誌"><option value="">全部模擬事件</option><option value="all">全部（含操作）</option></select></div><ol id="loglist"></ol></details></div>
 </aside>
 <button id="sb-toggle" type="button">清單</button>
 
@@ -1265,7 +1265,7 @@ async function boot() {
         mk({ id: 'w-' + f.id + '-' + k, name: names[ni++ % names.length], actor,
           actorLabel: actor === 'student' ? '學童' : '家長',
           kind: 'flow', flowId: f.id, rec, islandId: null,
-          payload: f.payload || '親子出遊', payloadKind: ['basket', 'book', 'parcel'][ni % 3],
+          payload: f.payload || '親子出遊', payloadKind: f.payloadKind || 'basket',
           d: k === 0 ? 0 : rec.length, dir: k === 0 ? 1 : -1 });
       }
     }
@@ -1301,6 +1301,8 @@ async function boot() {
       o.mesh.visible = o.rec.meshes[0].visible;
     }
   }
+  for (const o of ferryDots) o.mesh.visible = false;
+  updateFerryDots(0);
 
   const W_MAT = {
     body: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.82, metalness: 0 }),
@@ -1458,7 +1460,7 @@ async function boot() {
           w.d += w.speed * dt;
           if (w.d >= L) {
             w.d -= L;
-            log('巡邏：' + w.name + '（' + w.actorLabel + '）繞 ' + islandName(w.islandId) + ' 步道一圈', null);
+            log('巡邏：' + w.name + '（' + w.actorLabel + '）繞 ' + islandName(w.islandId) + ' 步道一圈', null, true);
           }
           w.anim += dt;
         } else if (w.pause > 0) {
@@ -1466,7 +1468,7 @@ async function boot() {
           if (w.pause <= 0) {
             const atTo = w.pauseEnd === 'to';
             const here = islandName(atTo ? f.toIslandId : f.fromIslandId);
-            log('交接：' + w.name + '（' + w.actorLabel + '）在 ' + here + ' 交付' + w.payload, w.flowId);
+            log('交接：' + w.name + '（' + w.actorLabel + '）在 ' + here + ' 交付' + w.payload, w.flowId, true);
             if (f.direction === 'both') {
               w.dir = atTo ? -1 : 1;
             } else {
@@ -1475,7 +1477,7 @@ async function boot() {
             w.pause = 0; w.pauseEnd = null;
             const origin = (f.direction === 'both') ? here : islandName(f.fromIslandId);
             const dest = islandName(w.dir >= 0 ? f.toIslandId : f.fromIslandId);
-            log('出發：' + w.name + '（' + w.actorLabel + '）從 ' + origin + ' 前往 ' + dest + '，搬運' + w.payload, w.flowId);
+            log('出發：' + w.name + '（' + w.actorLabel + '）從 ' + origin + ' 前往 ' + dest + '，搬運' + w.payload, w.flowId, true);
           }
         }
         else if (w.kind !== 'loop') {
@@ -1483,10 +1485,10 @@ async function boot() {
           w.d += w.speed * dt * w.dir;
           if (w.d >= L) {
             w.d = L; w.pause = WCFG.pauseSeconds; w.pauseEnd = 'to';
-            log('抵達：' + w.name + ' 抵達 ' + islandName(f.toIslandId) + '（' + w.payload + '）', w.flowId);
+            log('抵達：' + w.name + ' 抵達 ' + islandName(f.toIslandId) + '（' + w.payload + '）', w.flowId, true);
           } else if (w.d <= 0) {
             w.d = 0; w.pause = WCFG.pauseSeconds; w.pauseEnd = 'from';
-            log('抵達：' + w.name + ' 抵達 ' + islandName(f.fromIslandId) + '（' + w.payload + '）', w.flowId);
+            log('抵達：' + w.name + ' 抵達 ' + islandName(f.fromIslandId) + '（' + w.payload + '）', w.flowId, true);
           }
           if (Math.abs(w.d - before) > 1e-6) w.anim += dt;
         }
@@ -2905,9 +2907,13 @@ async function boot() {
   function renderLog() {
     const ol = $('#loglist');
     if (!ol) return;
-    const list = logEntries.filter((e) => !logFilterValue || e.flowId === logFilterValue);
+    const list = logEntries.filter((e) => {
+      if (logFilterValue === 'all') return true;
+      if (logFilterValue === '') return e.sim;
+      return e.flowId === logFilterValue;
+    });
     if (!list.length) {
-      ol.innerHTML = '<li class="lg-empty">' + (logFilterValue ? '這條關係尚無模擬事件' : '尚無活動紀錄') + '</li>';
+      ol.innerHTML = '<li class="lg-empty">' + ((logFilterValue && logFilterValue !== 'all') ? '這條關係尚無模擬事件' : (logFilterValue === 'all' ? '尚無活動紀錄' : '尚無模擬事件')) + '</li>';
       return;
     }
     ol.innerHTML = list.map((e) => '<li>' + fmtSimTime(e.t) + ' ' + logEsc(e.msg) + '</li>').join('');
@@ -2918,8 +2924,8 @@ async function boot() {
     if (sel) sel.value = logFilterValue;
     renderLog();
   }
-  function log(msg, flowId) {
-    logEntries.unshift({ t: state.simTime || 0, msg, flowId: flowId || null });
+  function log(msg, flowId, sim) {
+    logEntries.unshift({ t: state.simTime || 0, msg, flowId: flowId || null, sim: sim === true });
     while (logEntries.length > LOG_MAX) logEntries.pop();
     renderLog();
   }
@@ -3079,7 +3085,7 @@ async function boot() {
     for (const f of DATA.flows) {
       const A = DATA.islands.find((i) => i.id === f.fromIslandId), B = DATA.islands.find((i) => i.id === f.toIslandId);
       if (!matchQ(q, f.name, f.description, A.name, B.name)) continue;
-      html += '<button class="flowrow" data-flow="' + f.id + '">〜 ' + esc(f.name) + ' <small>(' + esc(A.name) + '↔' + esc(B.name) + '・待確認)</small></button>';
+      html += '<button class="flowrow" data-flow="' + f.id + '">〜 ' + esc(f.name) + ' <small>(' + esc(A.name) + '↔' + esc(B.name)       + (f.evidence === 'pending' ? '・待確認' : '・主題關聯') + ')</small></button>';
     }
     box.innerHTML = html || '<div class="sb-empty">找不到關係，換個關鍵字試試</div>';
     box.querySelectorAll('button[data-flow]').forEach((b) => b.addEventListener('click', () => selectFlow(b.dataset.flow, true)));
@@ -3135,7 +3141,7 @@ async function boot() {
     const dirTxt = f.direction === 'both' ? '雙向可往返' : (f.direction === 'forward' ? '單向' : '無方向');
     const fw = walkers.filter((w) => w.flowId === f.id);
     $('#infoname').textContent = f.name;
-    $('#infosub').textContent = '船運關係・' + (f.contentMode === 'provided' ? '示範模擬' : f.contentMode);
+    $('#infosub').textContent = (f.evidence === 'pending' ? '跨海船運・待確認關係' : '陸上順遊・主題關聯');
     const box = $('#infobody');
     box.innerHTML = '<p>' + esc(f.description || '展示用關係線。') + '</p>'
       + '<dl class="kv">'
@@ -3254,8 +3260,8 @@ async function boot() {
   $('#brand h1').textContent = DATA.meta.title;
   $('#brand p').textContent = DATA.meta.subtitle + '｜' + DATA.meta.audience;
   renderSidebar();
-  log('全台親子島載入完成，22 島就緒');
-  log('角色模擬啟動：' + walkers.length + ' 名角色沿 ' + DATA.flows.length + ' 條船運關係搬運（SIMULATION）');
+  log('全台親子島載入完成，22 島就緒', null, false);
+  log('角色模擬啟動：' + walkers.length + ' 名角色走陸上順遊與島嶼步道（SIMULATION）', null, false);
   $('#intro-next').addEventListener('click', () => showIntro(introIdx + 1));
   $('#intro-skip').addEventListener('click', () => showIntro(INTRO.length));
   try { if (!localStorage.getItem('island3d-intro')) setTimeout(() => showIntro(0), 900); } catch (e) {}
@@ -3307,7 +3313,7 @@ async function boot() {
       dirty = true;
     }
     const moved = controls.update();
-    if (!adv && (moved || dirty)) updateWalkers(0, false);
+    if (!adv && (moved || dirty)) { updateWalkers(0, false); updateFerryDots(0); }
     if (updateModelLOD()) dirty = true;
     if (dirty || moved) {
       try {
