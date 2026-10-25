@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>全台親子島｜全台親子景點放電地圖</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --brand:#E85A24; --green:#1F8A5B; --ink:#211d1d; --cream:#fff8f4;
+    --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:var(--font);
+    background:radial-gradient(#fffdf9,#edddcf);color:var(--ink)}
+  #scene{position:fixed;inset:0}
+  #scene canvas{display:block}
+  #labels{position:fixed;inset:0;pointer-events:none;z-index:5}
+  /* 載入畫面 */
+  #loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;
+    background:radial-gradient(#fffdf9,#edddcf)}
+  #loading .logo{width:64px;height:64px;border-radius:18px;background:var(--brand);
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-size:34px;font-weight:900;box-shadow:0 8px 24px #e85a2444}
+  #loading h1{margin:0;font-size:22px}
+  #loading p{margin:0;font-size:14px;color:#6b5f52}
+  #loading .bar{width:220px;height:8px;border-radius:99px;background:#e7d9c8;overflow:hidden}
+  #loading .bar i{display:block;height:100%;width:30%;border-radius:99px;
+    background:linear-gradient(90deg,var(--brand),var(--green));
+    animation:slide 1.1s infinite ease-in-out}
+  @keyframes slide{0%{margin-left:-30%}100%{margin-left:100%}}
+  /* 錯誤盒 */
+  #errbox{position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);
+    max-width:min(440px,90vw);background:var(--cream);border-radius:18px;
+    padding:24px 22px;box-shadow:0 18px 60px #4a2a1433;display:none;text-align:center}
+  #errbox.show{display:block}
+  #errbox h2{margin:0 0 8px;font-size:18px}
+  #errbox p{margin:0 0 14px;font-size:14px;color:#5c5347;white-space:pre-line}
+  #errbox button{min-height:44px;padding:10px 22px;border:0;border-radius:9px;
+    background:var(--brand);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+  /* 品牌卡 */
+  #brand{position:fixed;z-index:10;left:14px;top:14px;max-width:300px;
+    background:#ffffffd9;backdrop-filter:blur(12px);border-radius:18px;
+    padding:12px 16px;box-shadow:0 8px 28px #4a2a1422}
+  #brand .eyebrow{font-family:ui-monospace,monospace;font-size:10px;font-weight:700;
+    letter-spacing:2px;color:var(--green)}
+  #brand h1{margin:2px 0;font-size:20px}
+  #brand p{margin:0;font-size:12.5px;color:#5c5347}
+  #brand .src{margin-top:4px;font-size:11px;color:#8a7d6d}
+  /* 時間工具列 */
+  #timebar{position:fixed;z-index:10;left:50%;bottom:14px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:6px;background:#ffffffd9;
+    backdrop-filter:blur(12px);border-radius:99px;padding:8px 12px;
+    box-shadow:0 8px 28px #4a2a1422}
+  #timebar .t{font-size:12px;color:#6b5f52;min-width:92px;text-align:center}
+  #timebar button{min-height:44px;min-width:56px;border:1px solid #e4d6c3;border-radius:9px;
+    background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+  #timebar button:hover{background:#fcea8b}
+  #timebar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #timebar button:focus-visible{outline:3px solid var(--brand)}
+  /* 資訊卡 */
+  #info{position:fixed;z-index:10;left:14px;bottom:14px;width:300px;max-width:calc(100vw - 28px);
+    max-height:38vh;overflow:auto;background:#ffffffd9;backdrop-filter:blur(12px);
+    border-radius:18px;padding:12px 16px;box-shadow:0 8px 28px #4a2a1422;display:none}
+  #info.show{display:block}
+  #info h2{margin:0 0 4px;font-size:16px}
+  #info .sub{font-size:12px;color:var(--green);font-weight:700;margin-bottom:6px}
+  #info ul{margin:6px 0;padding-left:20px;font-size:13px}
+  #info p{font-size:13px;color:#5c5347;margin:6px 0}
+  #info .close{float:right;border:0;background:none;font-size:16px;cursor:pointer;color:#6b5f52}
+  /* 島嶼 pill 標籤 */
+  .pill{pointer-events:auto;cursor:pointer;user-select:none;white-space:nowrap;
+    font-size:11px;line-height:1.0;font-weight:700;
+    background:#fffffff2;border:2px solid var(--green);color:var(--ink);
+    border-radius:99px;padding:1px 6px;box-shadow:0 2px 8px #4a2a1414}
+  .pill:hover{background:#fff}
+  .pill:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+  .pill .num{color:#8a7d6d;font-weight:700;margin-right:2px}
+  .pill.todo{border-color:#b9a88f;color:#6b5f52;font-weight:500}
+  .pill.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pill.sel .num{color:#fcea8b}
+  .pill b{color:var(--brand)} .pill.sel b{color:#fcea8b}
+  @media (max-width:800px){
+    #brand{max-width:calc(100vw - 28px)} #brand p{display:none}
+    #info{width:calc(100vw - 28px)}
+    #timebar .t{display:none}
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="scene"></div>
+<div id="labels"></div>
+
+<div id="loading" role="status" aria-live="polite">
+  <div class="logo">島</div>
+  <h1>正在組合全台親子島…</h1>
+  <div class="bar"><i></i></div>
+  <p id="loadmsg">準備載入 3D 場景</p>
+</div>
+
+<div id="errbox" role="alert">
+  <h2 id="errtitle">載入失敗</h2>
+  <p id="errmsg"></p>
+  <button id="reloadbtn" type="button">重新載入</button>
+</div>
+
+<header id="brand">
+  <div class="eyebrow">FAMILY PLAY MAP</div>
+  <h1>全台親子島</h1>
+  <p>全台親子景點放電地圖｜帶 2 到 12 歲小朋友的家長・拖曳旋轉・點島嶼看景點</p>
+  <p class="src">景點資料：b/app.js PARKS（22 筆）・16 縣市待補</p>
+</header>
+
+<nav id="timebar" aria-label="展示時間切換">
+  <span class="t" id="clock">展示時間 10:00</span>
+  <button type="button" data-m="360">清晨 06</button>
+  <button type="button" data-m="720" class="on">白天 12</button>
+  <button type="button" data-m="1080">黃昏 18</button>
+  <button type="button" data-m="1260">夜晚 21</button>
+</nav>
+
+<aside id="info" aria-live="polite">
+  <button class="close" id="infoclose" type="button" aria-label="關閉">✕</button>
+  <h2 id="infoname"></h2>
+  <div class="sub" id="infosub"></div>
+  <div id="infobody"></div>
+</aside>
+
+<script type="module">
+const $ = (s) => document.querySelector(s);
+const loadmsg = (t) => { $('#loadmsg').textContent = t; };
+function fail(title, msg) {
+  $('#loading').style.display = 'none';
+  $('#errtitle').textContent = title;
+  $('#errmsg').textContent = msg;
+  $('#errbox').classList.add('show');
+}
+$('#reloadbtn').addEventListener('click', () => location.reload());
+window.addEventListener('error', (e) => {
+  if ($('#errbox').classList.contains('show')) return;
+  if (!window.__booted) fail('載入發生問題', String((e && e.message) || e) + '\n可按下方按鈕重新載入。');
+});
+window.addEventListener('unhandledrejection', (e) => {
+  if ($('#errbox').classList.contains('show')) return;
+  const r = e && e.reason;
+  fail('載入發生問題', String((r && r.message) || r || '未處理的非同步錯誤') + '\n可按下方按鈕重新載入。');
+});
+
+/* ---------- 固定種子亂數 ---------- */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ================= DATA（檔案前段：主題資料集中區） ================= */
+const DATA = {
+  meta: {
+    title: '全台親子島', subtitle: '全台親子景點放電地圖',
+    audience: '帶 2 到 12 歲小朋友的家長',
+    purpose: '認識全台各縣市親子景點分佈，快速找到放電去處',
+    mode: 'provided', lang: 'zh-Hant', seed: 20261025,
+    note: '景點 counts 與名單來自 parkmap-work/b/app.js PARKS（共 22 筆）；其餘縣市標示待補，不虛構景點。'
+  },
+  labels: { world: '親子群島', island: '縣市島', item: '景點', flow: '順遊路線', time: '展示時間' },
+  config: {
+    R: 2.02, SPACING: 2.28, TOP: 0.65, WATER_Y: -0.18,
+    brand: '#E85A24', green: '#1F8A5B',
+    camera: { fov: 32, near: 0.3, far: 320, minDistance: 3, maxDistance: 70,
+      panoramaDir: [0.24, 0.33, 0.87], panoramaMinDistance: 44, panoramaMaxDistance: 200,
+      panoramaLift: 1.8 }
+  },
+  // 22 島一縣市一島：axial 座標排成台灣形狀（北在上＝ -z 為北，r 愈小愈北）
+  islands: [
+    { id: 'taipei',     name: '台北',   en: 'Taipei',         q: 0,  r: -6, color: '#E85A24', groundPattern: 'brick' },
+    { id: 'keelung',    name: '基隆',   en: 'Keelung',        q: 1,  r: -6, color: '#E85A24', groundPattern: 'spots' },
+    { id: 'newtaipei',  name: '新北',   en: 'New Taipei',     q: 0,  r: -5, color: '#1F8A5B', groundPattern: 'stripes' },
+    { id: 'yilan',      name: '宜蘭',   en: 'Yilan',          q: 1,  r: -5, color: '#3e7c8c', groundPattern: 'brick' },
+    { id: 'taoyuan',    name: '桃園',   en: 'Taoyuan',        q: -1, r: -4, color: '#db6a41', groundPattern: 'spots' },
+    { id: 'hsinchucity',name: '新竹市', en: 'Hsinchu City',   q: -1, r: -3, color: '#3e7c8c', groundPattern: 'stripes' },
+    { id: 'hsinchuco',  name: '新竹縣', en: 'Hsinchu County', q: 0,  r: -3, color: '#71806a', groundPattern: 'brick' },
+    { id: 'miaoli',     name: '苗栗',   en: 'Miaoli',         q: -1, r: -2, color: '#71806a', groundPattern: 'spots' },
+    { id: 'taichung',   name: '台中',   en: 'Taichung',       q: -1, r: -1, color: '#1F8A5B', groundPattern: 'brick' },
+    { id: 'nantou',     name: '南投',   en: 'Nantou',         q: 0,  r: -1, color: '#71806a', groundPattern: 'stripes' },
+    { id: 'hualien',    name: '花蓮',   en: 'Hualien',        q: 1,  r: -1, color: '#3e7c8c', groundPattern: 'spots' },
+    { id: 'changhua',   name: '彰化',   en: 'Changhua',       q: -1, r: 0,  color: '#b48560', groundPattern: 'brick' },
+    { id: 'yunlin',     name: '雲林',   en: 'Yunlin',         q: -1, r: 1,  color: '#b48560', groundPattern: 'spots' },
+    { id: 'taitung',    name: '台東',   en: 'Taitung',        q: 1,  r: 1,  color: '#58a6a6', groundPattern: 'stripes' },
+    { id: 'chiayicity', name: '嘉義市', en: 'Chiayi City',    q: -1, r: 2,  color: '#E85A24', groundPattern: 'brick' },
+    { id: 'chiayico',   name: '嘉義縣', en: 'Chiayi County',  q: 0,  r: 2,  color: '#b48560', groundPattern: 'spots' },
+    { id: 'tainan',     name: '台南',   en: 'Tainan',         q: -1, r: 3,  color: '#db6a41', groundPattern: 'stripes' },
+    { id: 'kaohsiung',  name: '高雄',   en: 'Kaohsiung',      q: -1, r: 4,  color: '#db6a41', groundPattern: 'brick' },
+    { id: 'pingtung',   name: '屏東',   en: 'Pingtung',       q: 0,  r: 4,  color: '#58a6a6', groundPattern: 'spots' },
+    { id: 'penghu',     name: '澎湖',   en: 'Penghu',         q: -3, r: 2,  color: '#58a6a6', groundPattern: 'stripes' },
+    { id: 'kinmen',     name: '金門',   en: 'Kinmen',         q: -3, r: 0,  color: '#6f7fb5', groundPattern: 'brick' },
+    { id: 'lienchiang', name: '連江',   en: 'Lienchiang',     q: -1, r: -7, color: '#6f7fb5', groundPattern: 'spots' }
+  ],
+  // 真實景點資料（b/app.js PARKS 逐筆核對；嘉義併入嘉義市）
+  parks: {
+    '台北':   { count: 4, names: ['天母公園', '花博公園美術園區(舞蝶共融遊戲場)', '大佳河濱公園海洋遊戲場', '新新公園'] },
+    '新北':   { count: 5, names: ['新北大都會公園｜熊猴森樂園', '鶯歌古鐘樓公園(公二公園)', '林口樂活公園', '錦和運動公園', '觀音山林梢步道'] },
+    '基隆':   { count: 5, names: ['暖暖運動公園遊戲場', '中正公園希望之丘兒童遊戲場', '潮境公園鸚鵡螺溜滑梯', '正光公園(水果主題)', '大武崙森林運動公園'] },
+    '桃園':   { count: 6, names: ['南崁溪第一河濱公園', '風禾公園', '大有梯田生態公園', '中壢光明公園', '陽明運動公園', '楓樹腳公園'] },
+    '台中':   { count: 1, names: ['中央公園飛行美樂地'] },
+    '嘉義市': { count: 1, names: ['嘉義市立博物館'] }
+  },
+  items: [],   // 階段 2 建立項目模型
+  flows: [],   // 階段 4 建立關係線
+  story: { mode: 'none', stages: [] },
+  environment: {
+    startMinutes: 600, minutesPerSecond: 10,
+    // 分鐘, skyTop, horizon, sunColor, sunI, hemiSky, hemiGround, hemiI, night, water
+    keyframes: [
+      { m: 0,    top: '#1e2c58', hor: '#3f4f80', sun: '#b4c2ff', sunI: 1.15, hs: '#94a2d8', hg: '#64566a', hemiI: 1.85, night: 1.00, water: '#5a88b2' },
+      { m: 300,  top: '#26365f', hor: '#4c5688', sun: '#b8c4ff', sunI: 1.00, hs: '#96a4da', hg: '#66586c', hemiI: 1.85, night: 1.00, water: '#5c8ab4' },
+      { m: 360,  top: '#7f8fc4', hor: '#f6c3a6', sun: '#ffb48a', sunI: 1.30, hs: '#f3c6b5', hg: '#6b5a5a', hemiI: 1.10, night: 0.55, water: '#8fb7c4' },
+      { m: 450,  top: '#a9d1ea', hor: '#fbe6d3', sun: '#ffe2c4', sunI: 2.40, hs: '#eaf2f6', hg: '#8a7a68', hemiI: 1.25, night: 0.00, water: '#9fcfd6' },
+      { m: 720,  top: '#9fd0ec', hor: '#f4eee3', sun: '#fff1de', sunI: 2.90, hs: '#eef6fa', hg: '#8f8270', hemiI: 1.35, night: 0.00, water: '#a9d8db' },
+      { m: 960,  top: '#a6cfe6', hor: '#f8e7d2', sun: '#ffe3c0', sunI: 2.50, hs: '#f1efe8', hg: '#8a7a66', hemiI: 1.25, night: 0.00, water: '#9fcbd2' },
+      { m: 1065, top: '#8b8fc4', hor: '#f7b98f', sun: '#ff9f6a', sunI: 1.80, hs: '#f6d2bc', hg: '#7d6660', hemiI: 1.20, night: 0.30, water: '#93a9bd' },
+      { m: 1140, top: '#5a5e9e', hor: '#d99aa6', sun: '#ff9a7a', sunI: 1.30, hs: '#c0b2e0', hg: '#655868', hemiI: 1.35, night: 0.75, water: '#6a7cab' },
+      { m: 1260, top: '#22325f', hor: '#445488', sun: '#c0ccff', sunI: 1.20, hs: '#98a8dc', hg: '#685a6e', hemiI: 1.90, night: 1.00, water: '#5a88b2' },
+      { m: 1440, top: '#1e2c58', hor: '#3f4f80', sun: '#b4c2ff', sunI: 1.15, hs: '#94a2d8', hg: '#64566a', hemiI: 1.85, night: 1.00, water: '#5a88b2' }
+    ]
+  },
+  sources: [{ id: 'parks-appjs', title: 'parkmap-work/b/app.js PARKS（22 筆親子景點）', url: '../b/app.js', note: 'provided；階段 1 取用縣市筆數與景點名稱，無景點縣市不補造資料' }]
+};
+
+/* ---------- DATA 驗證 ---------- */
+function validateDATA(d) {
+  if (!d || !d.meta || !d.labels || !d.config || !d.environment) throw new Error('DATA 缺少 meta／labels／config／environment');
+  if (!Array.isArray(d.islands) || !Array.isArray(d.items) || !Array.isArray(d.flows) || !Array.isArray(d.sources)) {
+    throw new Error('DATA 的 islands／items／flows／sources 必須是陣列');
+  }
+  if (d.meta.mode === 'provided' && !d.sources.length) throw new Error('provided 模式必須提供來源');
+
+  const ids = new Set(), names = new Set(), cells = new Set();
+  const colors = /^#[0-9a-f]{6}$/i;
+  const groundKinds = new Set(['brick', 'spots', 'stripes']);
+  for (const isl of d.islands) {
+    for (const f of ['id', 'name', 'en', 'color', 'groundPattern']) {
+      if (!isl[f]) throw new Error('島嶼缺少欄位 ' + f + '：' + (isl.name || isl.id || '未知'));
+    }
+    if (!Number.isInteger(isl.q) || !Number.isInteger(isl.r)) throw new Error('島嶼座標必須是整數：' + isl.name);
+    if (!colors.test(isl.color)) throw new Error('島嶼顏色格式錯誤：' + isl.name);
+    if (!groundKinds.has(isl.groundPattern)) throw new Error('島嶼地面圖樣無效：' + isl.name);
+    if (ids.has(isl.id)) throw new Error('島嶼 id 重複：' + isl.id);
+    if (names.has(isl.name)) throw new Error('島嶼名稱重複：' + isl.name);
+    const k = isl.q + ',' + isl.r;
+    if (cells.has(k)) throw new Error('島嶼座標重複：' + isl.name);
+    ids.add(isl.id); names.add(isl.name); cells.add(k);
+  }
+
+  const parkNames = new Set();
+  for (const [c, p] of Object.entries(d.parks)) {
+    if (!d.islands.some((i) => i.name === c)) throw new Error('景點縣市無對應島嶼：' + c);
+    if (!Number.isInteger(p.count) || p.count < 1) throw new Error(c + ' 景點筆數無效');
+    if (p.count !== p.names.length) throw new Error(c + ' 筆數與名單不一致');
+    for (const n of p.names) {
+      if (!n || parkNames.has(n)) throw new Error('景點名稱空白或重複：' + c + '／' + n);
+      parkNames.add(n);
+    }
+  }
+  const total = Object.values(d.parks).reduce((n, p) => n + p.count, 0);
+  if (total !== 22) throw new Error('景點總數應為 22，實際 ' + total);
+  if (d.islands.length !== 22) throw new Error('島嶼應為 22 座，實際 ' + d.islands.length);
+  const todo = d.islands.filter((i) => !d.parks[i.name]).length;
+  if (todo !== 16) throw new Error('無景點縣市應為 16 座，實際 ' + todo);
+
+  if (!Number.isFinite(d.environment.startMinutes) || !Number.isFinite(d.environment.minutesPerSecond)) {
+    throw new Error('environment 缺少初始時間或時間速度');
+  }
+  const kf = d.environment.keyframes;
+  if (!kf.length || kf[0].m !== 0 || kf[kf.length - 1].m !== 1440) throw new Error('日夜 keyframes 不完整');
+  let prevM = -1;
+  for (const k of kf) {
+    if (!Number.isFinite(k.m) || k.m <= prevM) throw new Error('日夜 keyframes 分鐘需遞增');
+    prevM = k.m;
+    for (const f of ['top', 'hor', 'sun', 'hs', 'hg', 'water']) {
+      if (!colors.test(k[f])) throw new Error('日夜 keyframe 顏色格式錯誤：' + k.m + '／' + f);
+    }
+    for (const f of ['sunI', 'hemiI', 'night']) {
+      if (!Number.isFinite(k[f])) throw new Error('日夜 keyframe 數值錯誤：' + k.m + '／' + f);
+    }
+  }
+  const cam = d.config.camera;
+  for (const f of ['fov', 'near', 'far', 'minDistance', 'maxDistance']) {
+    if (!Number.isFinite(cam[f])) throw new Error('相機設定缺少 ' + f);
+  }
+  if (!Array.isArray(cam.panoramaDir) || cam.panoramaDir.length !== 3) throw new Error('相機全景方向無效');
+}
+
+/* ================= 啟動 ================= */
+boot().catch((err) => {
+  console.error(err);
+  fail('載入失敗', '原因：' + (err && err.message ? err.message : String(err)) + '\n請確認網路連線（需載入 Three.js CDN）與瀏覽器 WebGL 支援，或按下方按鈕重新載入。');
+});
+
+async function boot() {
+  loadmsg('檢查資料…');
+  validateDATA(DATA);
+
+  loadmsg('載入 Three.js（CDN）…');
+  let THREE, OrbitControls, CSS2DRenderer, CSS2DObject;
+  try {
+    THREE = await import('three');
+    ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+    ({ CSS2DRenderer, CSS2DObject } = await import('three/addons/renderers/CSS2DRenderer.js'));
+  } catch (e) {
+    throw new Error('Three.js CDN 載入失敗（需要網路連線）。' + (e && e.message ? ' ' + e.message : ''));
+  }
+
+  const state = {
+    envMinutes: DATA.environment.startMinutes,
+    selectedIsland: null,
+    userInteracted: false, dead: false,
+    net: null, islandMeshes: new Map(), labelObjs: new Map()
+  };
+  let dirty = true;
+  // localStorage：讀寫都 try/catch，不可阻止展示
+  try {
+    const saved = JSON.parse(localStorage.getItem('island3d-stage1') || '{}');
+    if (typeof saved.envMinutes === 'number') state.envMinutes = Math.min(1439, Math.max(0, saved.envMinutes));
+  } catch (e) { /* 忽略 */ }
+  const persist = () => {
+    try { localStorage.setItem('island3d-stage1', JSON.stringify({ envMinutes: Math.round(state.envMinutes) })); }
+    catch (e) { /* 忽略 */ }
+  };
+
+  const { R, SPACING, TOP, WATER_Y } = DATA.config;
+  const SQRT3 = Math.sqrt(3);
+  const axialToWorld = (q, r) => ({ x: SQRT3 * SPACING * (q + r / 2), z: 1.5 * SPACING * r });
+
+  /* ---------- Renderer / Scene / Camera ---------- */
+  loadmsg('建立渲染器…');
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  } catch (e) {
+    throw new Error('此裝置或瀏覽器不支援 WebGL，無法顯示 3D 場景。請改用支援 WebGL 的 Chrome / Edge / Safari 再試一次。');
+  }
+  if (!renderer.getContext()) throw new Error('無法建立 WebGL 繪圖環境（WebGL context 建立失敗）。');
+  const isMobile = Math.min(innerWidth, innerHeight) < 800 || /Mobi|Android/i.test(navigator.userAgent);
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.4 : 1.75));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1;
+  let shaderError = null;
+  renderer.debug.checkShaderErrors = true;
+  renderer.debug.onShaderError = (gl, program, glVertexShader, glFragmentShader) => {
+    const vs = gl.getShaderInfoLog(glVertexShader) || '';
+    const fs = gl.getShaderInfoLog(glFragmentShader) || '';
+    const link = gl.getProgramInfoLog(program) || '';
+    shaderError = (link + '\n' + vs + '\n' + fs).trim().slice(-700);
+    console.error('Shader compile/link error', shaderError);
+  };
+  $('#scene').appendChild(renderer.domElement);
+
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(innerWidth, innerHeight);
+  $('#labels').appendChild(labelRenderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xf4eee3, 42, 150);
+
+  const camera = new THREE.PerspectiveCamera(DATA.config.camera.fov, innerWidth / innerHeight, DATA.config.camera.near, DATA.config.camera.far);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.07;
+  controls.enablePan = false;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(25);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(70);
+  controls.minDistance = DATA.config.camera.minDistance;
+  controls.maxDistance = DATA.config.camera.maxDistance;
+  controls.addEventListener('start', () => { state.userInteracted = true; });
+
+  renderer.domElement.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    state.dead = true;
+    fail('顯示中斷', 'WebGL 繪圖環境遺失（顯示卡重置或資源不足）。\n請按下方按鈕重新載入。');
+  });
+
+  /* ---------- 燈光 ---------- */
+  const hemi = new THREE.HemisphereLight(0xeef6fa, 0x8f8270, 1.3);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xfff1de, 2.8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -20; sun.shadow.camera.right = 20;
+  sun.shadow.camera.top = 22; sun.shadow.camera.bottom = -22;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
+  sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.045; sun.shadow.radius = 3;
+  scene.add(sun); scene.add(sun.target);
+  const fill = new THREE.DirectionalLight(0xbfd6ff, 0.35);
+  fill.position.set(-18, 12, -20);
+  scene.add(fill);
+
+  /* ---------- 天空 ---------- */
+  const skyUni = {
+    uTop: { value: new THREE.Color('#9fd0ec') },
+    uHorizon: { value: new THREE.Color('#f4eee3') },
+    uSunDir: { value: new THREE.Vector3(0, 1, 0) },
+    uSun: { value: new THREE.Color('#fff1de') },
+    uNight: { value: 0 }
+  };
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(170, 32, 20),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: skyUni,
+      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: [
+        'varying vec3 vDir; uniform vec3 uTop,uHorizon,uSun; uniform vec3 uSunDir; uniform float uNight;',
+        'float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,45.164))) * 43758.5453); }',
+        'void main(){',
+        '  vec3 dir = normalize(vDir);',
+        '  vec3 col = mix(uHorizon, uTop, smoothstep(-0.02, 0.55, dir.y));',
+        '  col += uSun * pow(max(dot(dir, uSunDir), 0.0), 18.0) * 0.35;',
+        '  vec3 cell = floor(dir * 180.0);',
+        '  float star = step(0.9965, hash(cell)) * uNight * smoothstep(-0.12, 0.25, dir.y);',
+        '  col += vec3(star) * 0.85;',
+        '  gl_FragColor = vec4(col, 1.0);',
+        '  #include <tonemapping_fragment>',
+        '  #include <colorspace_fragment>',
+        '}'
+      ].join('\n')
+    })
+  );
+  scene.add(sky);
+
+  /* ---------- 水面 ---------- */
+  const waterUni = THREE.UniformsUtils.merge([
+    THREE.UniformsLib.fog,
+    { uShallow: { value: new THREE.Color('#a4d4da') }, uDeep: { value: new THREE.Color('#6fa9b8') }, uTint: { value: new THREE.Color('#a9d8db') }, uTime: { value: 0 }, uNight: { value: 0 } }
+  ]);
+  const water = new THREE.Mesh(
+    new THREE.CircleGeometry(160, 64).rotateX(-Math.PI / 2),
+    new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, fog: true, uniforms: waterUni,
+      vertexShader: [
+        'varying vec3 vW; varying float vFogDepth;',
+        'void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz;',
+        '  vec4 mv = viewMatrix * wp; vFogDepth = -mv.z;',
+        '  gl_Position = projectionMatrix * mv; }'
+      ].join('\n'),
+      fragmentShader: [
+        'varying vec3 vW; uniform vec3 uShallow,uDeep,uTint; uniform float uTime, uNight;',
+        'uniform vec3 fogColor; uniform float fogNear, fogFar; varying float vFogDepth;',
+        'void main(){',
+        '  float w1 = sin(vW.x * 0.16 + uTime * 0.6) * sin(vW.z * 0.13 - uTime * 0.4);',
+        '  float w2 = sin((vW.x + vW.z) * 0.07 + uTime * 0.25);',
+        '  vec3 col = mix(uShallow, uDeep, clamp(0.5 + 0.28 * w1 + 0.22 * w2, 0.0, 1.0));',
+        '  col = mix(col, uTint, 0.78);',
+        '  float dc = length(vW.xz) / 60.0;',
+        '  col = mix(col, uTint * 0.72, clamp(dc, 0.0, 1.0) * 0.55);',
+        '  float sp = pow(max(0.0, sin(vW.x * 1.7 + uTime * 1.1) * sin(vW.z * 1.53 - uTime * 0.9)), 30.0);',
+        '  col += vec3(1.0, 0.98, 0.94) * sp * (0.14 * (1.0 - 0.8 * uNight));',
+        '  float fogF = smoothstep(fogNear, fogFar, vFogDepth);',
+        '  col = mix(col, fogColor, fogF);',
+        '  gl_FragColor = vec4(col, 1.0);',
+        '  #include <tonemapping_fragment>',
+        '  #include <colorspace_fragment>',
+        '}'
+      ].join('\n')
+    })
+  );
+  water.position.y = WATER_Y; water.renderOrder = 0;
+  scene.add(water);
+
+  /* ---------- 地面貼圖（canvas 程序產生：磚紋／斑點／條紋） ---------- */
+  function groundTexture(kind) {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = '#f2e7d5'; g.fillRect(0, 0, 256, 256);
+    if (kind === 'brick') {
+      g.strokeStyle = '#d9c6a8'; g.lineWidth = 3;
+      for (let y = 0; y <= 256; y += 32) {
+        g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke();
+        const off = (y / 32) % 2 ? 32 : 0;
+        for (let x = off; x <= 256; x += 64) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 32); g.stroke(); }
+      }
+    } else if (kind === 'spots') {
+      const r2 = mulberry32(DATA.meta.seed);
+      for (let i = 0; i < 90; i++) {
+        g.fillStyle = ['#e3cfae', '#dcc19c', '#efe0c6'][i % 3];
+        g.beginPath(); g.arc(r2() * 256, r2() * 256, 4 + r2() * 9, 0, 7); g.fill();
+      }
+    } else {
+      g.strokeStyle = '#ddc9a6'; g.lineWidth = 10;
+      for (let x = -256; x < 512; x += 28) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 128, 256); g.stroke(); }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+  const groundTex = { brick: groundTexture('brick'), spots: groundTexture('spots'), stripes: groundTexture('stripes') };
+
+  /* ---------- 六角島 ---------- */
+  loadmsg('組合六角群島…');
+  const world = new THREE.Group(); scene.add(world);
+  const islandGroup = new THREE.Group(); world.add(islandGroup);
+  const hexTopGeoBase = () => new THREE.CircleGeometry(R - 0.05, 6).rotateZ(Math.PI / 6).rotateX(-Math.PI / 2);
+  const hexRing = (inner, outer) => new THREE.RingGeometry(inner, outer, 6, 1).rotateZ(Math.PI / 6).rotateX(-Math.PI / 2);
+  const CORAL = new THREE.Color(DATA.config.brand);
+
+  // 世界中心（太陽與全景基準）
+  const centers = DATA.islands.map((i) => axialToWorld(i.q, i.r));
+  const worldCenter = new THREE.Vector3(
+    centers.reduce((n, c) => n + c.x, 0) / centers.length, 0,
+    centers.reduce((n, c) => n + c.z, 0) / centers.length);
+
+  const parkOf = (name) => DATA.parks[name] || null;
+  const shallowMats = [], foamMats = [], labelAnchors = [];
+
+  for (const [islandNo, isl] of DATA.islands.entries()) {
+    const { x, z } = axialToWorld(isl.q, isl.r);
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.userData.islandId = isl.id;
+    const hasPark = !!parkOf(isl.name);
+
+    // 島面（UV 由世界座標產生，跨島同尺度同相位）
+    const topGeo = hexTopGeoBase();
+    {
+      const pos = topGeo.attributes.position, uv = topGeo.attributes.uv;
+      for (let i = 0; i < pos.count; i++) uv.setXY(i, (x + pos.getX(i)) / 2.2, (z + pos.getZ(i)) / 2.2);
+    }
+    const topMat = new THREE.MeshStandardMaterial({ map: groundTex[isl.groundPattern], roughness: 0.92, metalness: 0 });
+    if (hasPark) { topMat.color.set('#e8f0d8'); } // 有景點的島：淡淡草地色
+    const top = new THREE.Mesh(topGeo, topMat);
+    top.position.y = TOP; top.receiveShadow = true;
+    top.userData.islandId = isl.id;
+    g.add(top);
+    state.islandMeshes.set(isl.id, { group: g, topMat, baseColor: topMat.color.clone(), accent: new THREE.Color(isl.color) });
+
+    // 側壁（與島面同相位，向下延伸到水面以下）
+    const wallH = TOP - (WATER_Y - 0.5);
+    const wall = new THREE.Mesh(
+      new THREE.CylinderGeometry(R - 0.02, (R - 0.02) * 0.9, wallH, 6, 1, true),
+      new THREE.MeshStandardMaterial({ color: '#c9b18c', roughness: 0.95 }));
+    wall.position.y = TOP - wallH / 2; g.add(wall);
+
+    // 頂緣彩色圖案帶（高 0.16）
+    const band = new THREE.Mesh(
+      new THREE.CylinderGeometry(R + 0.005, R + 0.005, 0.16, 6, 1, true),
+      new THREE.MeshStandardMaterial({ color: isl.color, roughness: 0.8 }));
+    band.position.y = TOP - 0.08; g.add(band);
+
+    // 六角形步道環（中心線外接半徑 1.8、寬 0.28）＋路緣
+    const curb = new THREE.Mesh(hexRing(1.8 - 0.17, 1.8 + 0.17),
+      new THREE.MeshStandardMaterial({ color: '#e4d6c3', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 }));
+    curb.rotation.y = 0; curb.position.y = TOP + 0.006; curb.receiveShadow = true; g.add(curb);
+    const path = new THREE.Mesh(hexRing(1.8 - 0.14, 1.8 + 0.14),
+      new THREE.MeshStandardMaterial({ color: '#c79a68', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2 }));
+    path.position.y = TOP + 0.012; path.receiveShadow = true; g.add(path);
+
+    // 外圈淺水環＋白色泡沫環
+    const shallowMat = new THREE.MeshBasicMaterial({ color: '#bfe0e2', transparent: true, opacity: 0.8, depthWrite: false });
+    const shallow = new THREE.Mesh(hexRing(R + 0.05, R + 0.7), shallowMat);
+    shallow.position.y = WATER_Y + 0.02; shallow.renderOrder = 1; g.add(shallow);
+    const foamMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false });
+    const foam = new THREE.Mesh(hexRing(R + 0.02, R + 0.16), foamMat);
+    foam.position.y = WATER_Y + 0.03; foam.renderOrder = 2; g.add(foam);
+    shallowMats.push(shallowMat); foamMats.push(foamMat);
+
+    // 島嶼 pill 標籤（前側崖邊）
+    const p = parkOf(isl.name);
+    const el = document.createElement('div');
+    el.className = 'pill' + (p ? '' : ' todo');
+    const numEl = document.createElement('span');
+    numEl.className = 'num';
+    numEl.textContent = String(islandNo + 1).padStart(2, '0');
+    el.append(numEl, document.createTextNode(' ' + isl.name + '・'));
+    if (p) {
+      const cnt = document.createElement('b');
+      cnt.textContent = p.count + ' 景點';
+      el.append(cnt);
+    } else {
+      el.append(document.createTextNode('待補'));
+    }
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', isl.name + '，' + (p ? p.count + ' 個景點' : '景點資料待補') + '；點擊查看');
+    el.title = '點擊查看' + isl.name;
+    el.addEventListener('click', (ev) => { ev.stopPropagation(); state.userInteracted = true; selectIsland(isl.id, true); });
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectIsland(isl.id, true); }
+    });
+    const label = new CSS2DObject(el);
+    const labelY = TOP + 0.55, labelZ = R * 0.92;
+    label.position.set(0, labelY, labelZ);
+    g.add(label);
+    state.labelObjs.set(isl.id, el);
+    labelAnchors.push(new THREE.Vector3(x, labelY, z + labelZ));
+
+    islandGroup.add(g);
+  }
+
+  /* ---------- 橋（相鄰島嶼，9 片甲板＋小拱） ---------- */
+  const cellOf = new Map(DATA.islands.map((i) => [i.q + ',' + i.r, i]));
+  const DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+  const pairs = [];
+  for (const isl of DATA.islands) {
+    for (const [dq, dr] of DIRS) {
+      const nb = cellOf.get((isl.q + dq) + ',' + (isl.r + dr));
+      if (nb && isl.id < nb.id) pairs.push([isl, nb]);
+    }
+  }
+  // 面向鄰島的邊中點方向（pointy-top 六角：邊法線朝 0/60/…/300 度）
+  function edgePoint(center, toward) {
+    let best = null, bd = -2;
+    for (let k = 0; k < 6; k++) {
+      const a = (k * Math.PI) / 3;
+      const dx = Math.cos(a), dz = Math.sin(a);
+      const d = dx * toward.x + dz * toward.z;
+      if (d > bd) { bd = d; best = { x: dx, z: dz }; }
+    }
+    return best;
+  }
+  const deckMatrices = [], beamMatrices = [];
+  const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), tmpS = new THREE.Vector3();
+  for (const [a, b] of pairs) {
+    const ca = axialToWorld(a.q, a.r), cb = axialToWorld(b.q, b.r);
+    const dir = { x: cb.x - ca.x, z: cb.z - ca.z };
+    const len = Math.hypot(dir.x, dir.z); dir.x /= len; dir.z /= len;
+    const ea = edgePoint(ca, dir), eb = edgePoint(cb, { x: -dir.x, z: -dir.z });
+    const pa = { x: ca.x + ea.x * 1.559, z: ca.z + ea.z * 1.559 };
+    const pb = { x: cb.x + eb.x * 1.559, z: cb.z + eb.z * 1.559 };
+    const span = Math.hypot(pb.x - pa.x, pb.z - pa.z);
+    const ang = Math.atan2(pb.x - pa.x, pb.z - pa.z);
+    for (let i = 0; i < 9; i++) {
+      const t = (i + 0.5) / 9;
+      const arch = Math.sin(t * Math.PI) * 0.05;
+      tmpE.set(0, ang, 0); tmpQ.setFromEuler(tmpE); tmpS.set(1, 1, 1);
+      tmpM.compose(new THREE.Vector3(pa.x + (pb.x - pa.x) * t, TOP + 0.03 + arch, pa.z + (pb.z - pa.z) * t), tmpQ, tmpS);
+      deckMatrices.push(tmpM.clone());
+    }
+    for (const side of [-0.3, 0.3]) {
+      const mx = (pa.x + pb.x) / 2 - dir.z * side, mz = (pa.z + pb.z) / 2 + dir.x * side;
+      tmpE.set(0, ang, 0); tmpQ.setFromEuler(tmpE); tmpS.set(1, 1, 1);
+      tmpM.compose(new THREE.Vector3(mx, TOP + 0.12, mz), tmpQ, tmpS);
+      beamMatrices.push({ m: tmpM.clone(), len: span });
+    }
+  }
+  {
+    const deckGeo = new THREE.BoxGeometry(0.56, 0.07, 0.16);
+    const decks = new THREE.InstancedMesh(deckGeo, new THREE.MeshStandardMaterial({ color: '#c98d5f', roughness: 0.85 }), deckMatrices.length);
+    deckMatrices.forEach((m, i) => decks.setMatrixAt(i, m));
+    decks.castShadow = true; decks.receiveShadow = true; world.add(decks);
+    const beamGeo = new THREE.BoxGeometry(0.07, 0.07, 1);
+    const beams = new THREE.InstancedMesh(beamGeo, new THREE.MeshStandardMaterial({ color: '#a34e34', roughness: 0.85 }), beamMatrices.length);
+    beamMatrices.forEach((o, i) => { const s = new THREE.Vector3(1, 1, o.len); const mm = o.m.clone().scale(s); beams.setMatrixAt(i, mm); });
+    world.add(beams);
+  }
+
+  /* ---------- 路網（每島 12 節點＋橋連接＋Dijkstra） ---------- */
+  function buildRoadNet() {
+    const nodes = [], adj = new Map(), keyOf = new Map();
+    const addNode = (x, y, z2, island) => {
+      const idx = nodes.length;
+      nodes.push({ x, y, z: z2, island }); adj.set(idx, []);
+      return idx;
+    };
+    const link = (i, j) => {
+      const w = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].z - nodes[j].z);
+      adj.get(i).push({ to: j, w }); adj.get(j).push({ to: i, w });
+    };
+    for (const isl of DATA.islands) {
+      const { x: cx, z: cz } = axialToWorld(isl.q, isl.r);
+      const ring = [];
+      for (let k = 0; k < 12; k++) {
+        const a = (k * Math.PI) / 6; // 奇數＝步道頂點(1.8)，偶數＝邊中點(1.559)
+        const rad = k % 2 === 1 ? 1.8 : 1.8 * Math.cos(Math.PI / 6);
+        const idx = addNode(cx + Math.cos(a) * rad, TOP + 0.05, cz + Math.sin(a) * rad, isl.id);
+        ring.push(idx);
+        if (k % 2 === 0) {
+          const ea = Math.round(a / (Math.PI / 3)) % 6;
+          keyOf.set(isl.id + ':e' + ((ea % 6) + 6) % 6, idx);
+        }
+      }
+      for (let k = 0; k < 12; k++) link(ring[k], ring[(k + 1) % 12]);
+    }
+    for (const [a, b] of pairs) {
+      const ca = axialToWorld(a.q, a.r), cb = axialToWorld(b.q, b.r);
+      const dir = { x: cb.x - ca.x, z: cb.z - ca.z };
+      const L = Math.hypot(dir.x, dir.z); dir.x /= L; dir.z /= L;
+      const ea = Math.round(Math.atan2(dir.z, dir.x) / (Math.PI / 3));
+      const eb = Math.round(Math.atan2(-dir.z, -dir.x) / (Math.PI / 3));
+      const na = keyOf.get(a.id + ':e' + ((ea % 6) + 6) % 6);
+      const nb = keyOf.get(b.id + ':e' + ((eb % 6) + 6) % 6);
+      if (na == null || nb == null) throw new Error('橋樑路網節點缺失：' + a.name + '↔' + b.name);
+      link(na, nb);
+    }
+    return { nodes, adj };
+  }
+  state.net = buildRoadNet();
+  function dijkstra(from, to) { // 階段 4 角色行走共用
+    const dist = new Array(state.net.nodes.length).fill(Infinity);
+    const prev = new Array(state.net.nodes.length).fill(-1);
+    const done = new Set(); dist[from] = 0;
+    for (;;) {
+      let u = -1, best = Infinity;
+      for (let i = 0; i < dist.length; i++) if (!done.has(i) && dist[i] < best) { best = dist[i]; u = i; }
+      if (u === -1 || u === to) break;
+      done.add(u);
+      for (const { to: v, w } of state.net.adj.get(u)) {
+        if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; }
+      }
+    }
+    if (!isFinite(dist[to])) return null;
+    const path = []; let c = to;
+    while (c !== -1) { path.unshift(c); c = prev[c]; }
+    return path;
+  }
+  window.__dijkstra = dijkstra; // 供後續階段取用
+
+  /* ---------- 全景構圖（依實際島群與標籤外框找最小可視距離） ---------- */
+  function framePanorama() {
+    const box = new THREE.Box3().setFromObject(islandGroup);
+    const center = box.getCenter(new THREE.Vector3());
+    const dir = new THREE.Vector3(...DATA.config.camera.panoramaDir).normalize();
+    const up = new THREE.Vector3(0, 1, 0).addScaledVector(dir, -dir.y).normalize();
+    const target = center.clone().addScaledVector(up, -DATA.config.camera.panoramaLift);
+    const items = [];
+    for (const isl of DATA.islands) {
+      const { x, z } = axialToWorld(isl.q, isl.r);
+      for (let k = 0; k < 6; k++) {
+        const a = Math.PI / 6 + k * Math.PI / 3;
+        items.push({ p: new THREE.Vector3(x + Math.cos(a) * (R + 0.7), WATER_Y, z + Math.sin(a) * (R + 0.7)), hw: 6, hh: 6, ui: false });
+      }
+    }
+    for (const p of labelAnchors) items.push({ p, hw: 54, hh: 12, ui: true });
+    const uiRects = ['#brand', '#timebar'].map((sel) => {
+      const r = $(sel).getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    });
+    const margin = 10;
+    const tmp = new THREE.Vector3();
+    function fits(dist) {
+      camera.position.copy(target).addScaledVector(dir, dist);
+      camera.lookAt(target);
+      camera.updateMatrixWorld(true);
+      for (const o of items) {
+        tmp.copy(o.p).project(camera);
+        if (tmp.z < -1 || tmp.z > 1) return false;
+        const sx = (tmp.x * 0.5 + 0.5) * innerWidth;
+        const sy = (-tmp.y * 0.5 + 0.5) * innerHeight;
+        if (sx - o.hw < margin || sx + o.hw > innerWidth - margin) return false;
+        if (sy - o.hh < margin || sy + o.hh > innerHeight - margin) return false;
+        for (const r of uiRects) {
+          if (!o.ui) continue;
+          if (sx + o.hw > r.left && sx - o.hw < r.right && sy + o.hh > r.top && sy - o.hh < r.bottom) return false;
+        }
+      }
+      return true;
+    }
+    let lo = DATA.config.camera.panoramaMinDistance;
+    let hi = DATA.config.camera.panoramaMaxDistance;
+    if (!fits(hi)) { // 極端視窗：至少保持全部內容在畫面內
+      lo = hi; hi = hi * 1.6;
+    }
+    for (let i = 0; i < 32; i++) {
+      const mid = (lo + hi) / 2;
+      if (fits(mid)) hi = mid; else lo = mid;
+    }
+    const dist = hi;
+    controls.target.copy(target);
+    controls.maxDistance = Math.max(DATA.config.camera.maxDistance, Math.ceil(dist + 10));
+    camera.position.copy(target).addScaledVector(dir, dist);
+    controls.update();
+  }
+  framePanorama();
+
+  /* ---------- 日夜 ---------- */
+  const C = (h) => new THREE.Color(h);
+  const SHALLOW_LIGHT = new THREE.Color('#eaf7f7');
+  const KF = DATA.environment.keyframes;
+  function envAt(minutes) {
+    const m = ((minutes % 1440) + 1440) % 1440;
+    let i = 0;
+    while (i < KF.length - 2 && KF[i + 1].m <= m) i++;
+    const a = KF[i], b = KF[i + 1];
+    const t = THREE.MathUtils.clamp((m - a.m) / (b.m - a.m), 0, 1);
+    const mix = (ca, cb) => C(ca).lerp(C(cb), t);
+    return {
+      top: mix(a.top, b.top), hor: mix(a.hor, b.hor), sun: mix(a.sun, b.sun),
+      sunI: a.sunI + (b.sunI - a.sunI) * t,
+      hs: mix(a.hs, b.hs), hg: mix(a.hg, b.hg),
+      hemiI: a.hemiI + (b.hemiI - a.hemiI) * t,
+      night: a.night + (b.night - a.night) * t,
+      water: mix(a.water, b.water)
+    };
+  }
+  function sunDir(minutes) {
+    const t = THREE.MathUtils.clamp((minutes - 360) / 720, 0, 1);
+    const az = Math.PI * (0.15 + 0.7 * t);
+    const el = 0.35 + Math.sin(t * Math.PI) * 0.75;
+    return new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), 0.55 * Math.cos(el) + 0.35).normalize();
+  }
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function applyEnv() {
+    const e = envAt(state.envMinutes);
+    skyUni.uTop.value.copy(e.top); skyUni.uHorizon.value.copy(e.hor);
+    skyUni.uSun.value.copy(e.sun); skyUni.uNight.value = e.night;
+    const sd = sunDir(state.envMinutes);
+    skyUni.uSunDir.value.copy(sd);
+    sun.position.copy(worldCenter).addScaledVector(sd, 40);
+    sun.target.position.copy(worldCenter);
+    sun.color.copy(e.sun); sun.intensity = e.sunI;
+    hemi.color.copy(e.hs); hemi.groundColor.copy(e.hg); hemi.intensity = e.hemiI;
+    scene.fog.color.copy(e.hor);
+    waterUni.uTint.value.copy(e.water);
+    waterUni.uNight.value = e.night;
+    waterUni.fogColor.value.copy(e.hor);
+    waterUni.fogNear.value = scene.fog.near;
+    waterUni.fogFar.value = scene.fog.far;
+    for (const m of shallowMats) m.color.copy(e.water).lerp(SHALLOW_LIGHT, 0.3);
+    for (const m of foamMats) m.opacity = 0.55 * (1 - 0.5 * e.night);
+    const hh = String(Math.floor(state.envMinutes / 60)).padStart(2, '0');
+    const mm = String(Math.floor(state.envMinutes % 60)).padStart(2, '0');
+    $('#clock').textContent = '展示時間 ' + hh + ':' + mm;
+    const cur = Math.round(state.envMinutes) % 1440;
+    let bestTarget = null, bestDist = Infinity;
+    document.querySelectorAll('#timebar button').forEach((btn) => {
+      const target = +btn.dataset.m % 1440;
+      const d = Math.abs(cur - target);
+      const circular = Math.min(d, 1440 - d);
+      if (circular < bestDist) { bestDist = circular; bestTarget = target; }
+    });
+    document.querySelectorAll('#timebar button').forEach((btn) => {
+      btn.classList.toggle('on', +btn.dataset.m % 1440 === bestTarget);
+    });
+  }
+  document.querySelectorAll('#timebar button').forEach((btn) => {
+    btn.addEventListener('click', () => { state.envMinutes = +btn.dataset.m % 1440; applyEnv(); persist(); dirty = true; });
+  });
+  applyEnv();
+
+  /* ---------- 選取（點島嶼） ---------- */
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  let downPos = null, fly = null;
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    state.userInteracted = true;
+    downPos = [e.clientX, e.clientY];
+    fly = null; // 使用者接手，取消自動飛行
+  });
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (!downPos) return;
+    const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
+    downPos = null;
+    if (moved > 6) return;
+    ptr.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(ptr, camera);
+    const hits = ray.intersectObjects(islandGroup.children, true);
+    let id = null;
+    for (const h of hits) {
+      let o = h.object;
+      while (o && !o.userData.islandId) o = o.parent;
+      if (o) { id = o.userData.islandId; break; }
+    }
+    if (id) selectIsland(id, true); else selectIsland(null, false);
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') selectIsland(null, false);
+  });
+
+  function selectIsland(id, flyTo) {
+    state.selectedIsland = id;
+    for (const [key, rec] of state.islandMeshes) {
+      const on = key === id;
+      rec.topMat.color.copy(rec.baseColor).lerp(CORAL, on ? 0.22 : 0);
+      rec.topMat.needsUpdate = false;
+    }
+    for (const [key, el] of state.labelObjs) el.classList.toggle('sel', key === id);
+    const box = $('#info');
+    if (!id) { box.classList.remove('show'); dirty = true; return; }
+    const isl = DATA.islands.find((i) => i.id === id);
+    const p = parkOf(isl.name);
+    $('#infoname').textContent = isl.name + '島';
+    $('#infosub').textContent = p ? '有 ' + p.count + ' 處親子景點' : '景點資料待補';
+    $('#infobody').innerHTML = p
+      ? '<ul>' + p.names.map((n) => '<li>' + n + '</li>').join('') + '</ul><p>詳細介紹與導航：後續階段加入卡片。</p>'
+      : '<p>這一座島還沒有景點資料，歡迎之後補上在地好去處。</p>';
+    box.classList.add('show');
+    if (flyTo) {
+      const { x, z } = axialToWorld(isl.q, isl.r);
+      const target = new THREE.Vector3(x, TOP, z);
+      const pos = target.clone().add(new THREE.Vector3(2.75, 5.3, 6.2));
+      fly = { t: 0, dur: reducedMotion ? 0 : 0.8, fromT: controls.target.clone(), toT: target, fromP: camera.position.clone(), toP: pos };
+      if (reducedMotion) { controls.target.copy(target); camera.position.copy(pos); fly = null; }
+    }
+    dirty = true;
+  }
+  $('#infoclose').addEventListener('click', () => selectIsland(null, false));
+
+  /* ---------- 尺寸變化 ---------- */
+  new ResizeObserver(() => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    labelRenderer.setSize(innerWidth, innerHeight);
+    if (!state.userInteracted && !state.selectedIsland) framePanorama();
+    dirty = true;
+  }).observe(document.body);
+
+  /* ---------- 主迴圈（統一 simulationTime，dt 上限 0.08） ---------- */
+  let simTime = 0, last = performance.now(), lastShown = -1;
+  controls.addEventListener('change', () => { dirty = true; });
+  setInterval(persist, 5000);
+
+  function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+  function tick(now) {
+    if (state.dead) return;
+    requestAnimationFrame(tick);
+    const dt = Math.min((now - last) / 1000, 0.08); last = now;
+    let adv = true;
+    if (document.hidden || reducedMotion) adv = false;
+    if (adv && !document.hidden) {
+      simTime += dt;
+      state.envMinutes = (state.envMinutes + dt * DATA.environment.minutesPerSecond) % 1440;
+      const shown = Math.floor(state.envMinutes / 10);
+      if (shown !== lastShown) { lastShown = shown; applyEnv(); }
+      waterUni.uTime.value = simTime;
+      dirty = true;
+    }
+    if (fly) {
+      fly.t += dt;
+      const k = easeInOutCubic(Math.min(fly.t / fly.dur, 1));
+      controls.target.lerpVectors(fly.fromT, fly.toT, k);
+      camera.position.lerpVectors(fly.fromP, fly.toP, k);
+      if (fly.t >= fly.dur) fly = null;
+      dirty = true;
+    }
+    if (dirty || controls.enableDamping) {
+      controls.update();
+      try {
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+      } catch (e) {
+        state.dead = true;
+        fail('算圖失敗', '原因：' + (e && e.message ? e.message : String(e)) + '\n可按下方按鈕重新載入。');
+        return;
+      }
+      if (shaderError) {
+        state.dead = true;
+        fail('著色器編譯失敗', shaderError + '\n請回報此訊息，或按下方按鈕重新載入。');
+        return;
+      }
+      dirty = false;
+    }
+  }
+
+  loadmsg('算圖第一幀…');
+  try {
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+  } catch (e) {
+    throw new Error('第一幀渲染失敗：' + (e && e.message ? e.message : String(e)));
+  }
+  if (shaderError) {
+    fail('著色器編譯失敗', shaderError + '\n請回報此訊息，或按下方按鈕重新載入。');
+    return;
+  }
+  window.__booted = true;
+  $('#loading').style.display = 'none';
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>
