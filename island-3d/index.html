@@ -115,6 +115,7 @@
   #logwrap .lg-head b{font-size:13px;color:var(--ink)}
   #loglist{margin:6px 0 0;padding-left:20px;font-size:12.5px;max-height:16vh;overflow:auto;color:#5c5347}
   /* 卡片內容 */
+  .pin-item{pointer-events:auto;cursor:pointer;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:var(--brand);color:#fff;font-size:14px;font-weight:900;line-height:1;box-shadow:0 2px 8px #4a2a1444;padding:0;font-family:var(--font)}
   #infobody .thumb{width:160px;height:160px;border-radius:12px;background:#f3e9d8;display:block;margin:4px 0}
   #infobody .facts{margin:6px 0;padding-left:20px;font-size:13px}
   #infobody .metrics{display:flex;gap:6px;margin:8px 0}
@@ -172,7 +173,6 @@
   .sb-item{display:flex;align-items:center;width:100%;min-height:44px;text-align:left;border:0;background:none;color:var(--green);
     font-weight:700;cursor:pointer;font-family:var(--font);font-size:13px;padding:5px 2px;border-radius:6px}
   .sb-item:hover{background:#fff8f4;color:var(--brand)}
-  .pill.compact .num{display:none}
   .pill.compact{padding:1px 5px}
   .wname.lbl-hidden,.pill.lbl-hidden{visibility:hidden!important;pointer-events:none}
   html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{
@@ -560,7 +560,7 @@ function normalizeItems(d) {
   const POWER_NAMES = ['', '輕量放電', '中度放電', '重度放電'];
   const TAG_KEYS = [['沙坑', '玩沙'], ['戲水', '玩水'], ['玩水', '玩水'], ['水道', '玩水'], ['噴泉', '玩水'], ['溜索', '溜索'], ['滑索', '溜索'], ['鞦韆', '鞦韆'], ['攀爬', '攀爬'], ['攀岩', '攀爬'], ['跑酷', '攀爬'], ['野餐', '野餐'], ['草原', '野餐'], ['草坪', '野餐'], ['遮蔭', '遮蔭'], ['森林', '遮蔭'], ['無障礙', '無障礙'], ['廁所', '廁所'], ['公廁', '廁所'], ['停車', '停車']];
   for (const it of d.items) {
-    const s = d.parkDetail[it.name] || {};
+    const s = (d.parkDetail || {})[it.name] || {};
     it.summary = s.kid || it.summary;
     it.facts = (s.toys || '').split('、').filter((x) => x).slice(0, 3);
     it.metrics = [];
@@ -640,6 +640,7 @@ function validateDATA(d) {
   if (!d.items.length) throw new Error('至少需要一個項目模型');
 
   const parkNames = new Set();
+  if (d.parks) {
   for (const [c, p] of Object.entries(d.parks)) {
     if (!d.islands.some((i) => i.name === c)) throw new Error('景點縣市無對應島嶼：' + c);
     if (!Number.isInteger(p.count) || p.count < 1) throw new Error(c + ' 景點筆數無效');
@@ -653,7 +654,7 @@ function validateDATA(d) {
   if (!(total > 0)) throw new Error('景點總數無效');
   if (total !== d.items.length) throw new Error('PARKS 筆數與 items 數量不一致：' + total + '／' + d.items.length);
   if (d.islands.length < 1) throw new Error('島嶼數量無效');
-  const todo = d.islands.filter((i) => !d.parks[i.name]).length;
+  const todo = d.islands.filter((i) => !(d.parks || {})[i.name]).length;
   if (todo !== d.islands.length - Object.keys(d.parks).length) throw new Error('待補島嶼計算不一致，實際待補 ' + todo);
   for (const p of Object.values(d.parks)) {
     for (const n of p.names) {
@@ -662,6 +663,7 @@ function validateDATA(d) {
       if (![1, 2, 3].includes(dd.power)) throw new Error('景點放電度無效：' + n);
       if (!dd.nav || !dd.info) throw new Error('景點缺少連結：' + n);
     }
+  }
   }
   for (const it of d.items) {
     if (!it.id || !it.islandId || !it.name || !it.model) throw new Error('項目缺少基本欄位');
@@ -1123,6 +1125,7 @@ async function boot() {
   const islandLabelMeta = new Map();
   function fillIslandLabel(el, isl, idx, p) {
     el.textContent = '';
+    el.classList.remove('compact'); delete el.dataset.full;
     const numEl = document.createElement('span');
     numEl.className = 'num';
     numEl.textContent = String(idx + 1).padStart(2, '0');
@@ -3003,7 +3006,7 @@ async function boot() {
     const hh = String(Math.floor(state.envMinutes / 60)).padStart(2, '0');
     const mm = String(Math.floor(state.envMinutes % 60)).padStart(2, '0');
     const hhmm = hh + ':' + mm;
-    $('#clock').textContent = tr('展示時間 ', 'Time ') + hhmm;
+    $('#clock').textContent = tr(DATA.labels.time + ' ', 'Time ') + hhmm;
     const mini = $('#time-mini');
     if (mini) mini.textContent = hhmm;
     const cur = Math.round(state.envMinutes) % 1440;
@@ -3189,6 +3192,35 @@ async function boot() {
     if (reducedMotion) { controls.target.copy(look); camera.position.copy(pos); fly = null; }
     dirty = true;
   }
+  if (!state.itemPinGroup) { state.itemPinGroup = new THREE.Group(); world.add(state.itemPinGroup); }
+  function rebuildItemPins(islandId) {
+    for (let i = state.itemPinGroup.children.length - 1; i >= 0; i--) {
+      const o = state.itemPinGroup.children[i];
+      state.itemPinGroup.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.material.dispose) o.material.dispose();
+    }
+    if (!islandId) return;
+    const CIRC = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+    islandItems(islandId).slice(0, 8).forEach((it, k) => {
+      const pos = state.itemPos.get(it.id);
+      if (!pos) return;
+      const el = document.createElement('button');
+      el.className = 'pin-item'; el.type = 'button';
+      el.textContent = CIRC[k] || String(k + 1);
+      el.setAttribute('aria-label', it.name);
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); selectItem(it.id, true); });
+      const o = new CSS2DObject(el);
+      o.position.set(pos.x, pos.y + 1.15, pos.z);
+      state.itemPinGroup.add(o);
+      const g = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(pos.x, TOP + 0.2, pos.z),
+        new THREE.Vector3(pos.x, pos.y + 1.05, pos.z)]);
+      const ln = new THREE.Line(g, new THREE.LineBasicMaterial({ color: DATA.config.brand, depthTest: false, transparent: true }));
+      ln.renderOrder = 5;
+      state.itemPinGroup.add(ln);
+    });
+  }
   function selectIsland(id, flyTo, keepItem) {
     labelLayoutDirty = true;
     state.selectedIsland = id;
@@ -3206,9 +3238,10 @@ async function boot() {
     updateRelVisibility();
     setLogFilter('');
     const box = $('#info');
-    if (!id) { state.selectedItemId = null; highlightItem(null); box.classList.remove('show'); if (isSheetLayout()) closeSheet('info'); dirty = true; return; }
+    if (!id) { state.selectedItemId = null; highlightItem(null); rebuildItemPins(null); box.classList.remove('show'); if (isSheetLayout()) closeSheet('info'); dirty = true; return; }
     const isl = DATA.islands.find((i) => i.id === id);
     showIslandCard(isl);
+    rebuildItemPins(id);
     box.classList.add('show');
     if (isSheetLayout()) openSheet('info');
     log('選擇島嶼：' + isl.name + '島', null, false, 'Selected island: ' + (isl.en || isl.name));
@@ -3250,6 +3283,7 @@ async function boot() {
     state.selectedFlowId = flowId;
     highlightItem(null);
     showFlowCard(f);
+    rebuildItemPins(null);
     $('#info').classList.add('show');
     if (isSheetLayout()) openSheet('info');
     updateRelVisibility();
@@ -3409,7 +3443,7 @@ async function boot() {
   $('#h-log').addEventListener('click', (e) => {
     if (isSheetLayout()) openSheet('list'); else $('#sidebar').hidden = false;
     const d = document.querySelector('#logwrap details');
-    if (d) { d.open = true; if (d.open) d.scrollIntoView({ block: 'nearest' }); }
+    if (d) { d.open = !d.open; if (d.open) d.scrollIntoView({ block: 'nearest' }); }
     e.currentTarget.classList.toggle('on', !!(d && d.open));
     dirty = true;
   });
@@ -3456,8 +3490,9 @@ async function boot() {
     const stages = DATA.story.stages || [];
     if (!stages.length) return;
     if (reducedMotion) {
-      // 減少動態：不自動播放，改為每次點擊手動前進一個階段
+      // 減少動態：不自動播放，每次點擊手動前進一個階段；走完則停止
       if (!state.storyStage) { tourIdx = 0; log('減少動態：導覽改為手動逐段', null, false, 'Reduced motion: tour advances manually'); }
+      if (tourIdx >= stages.length) { stopTour(false); return; }
       tourStep(b, stages);
       return;
     }
@@ -3542,7 +3577,7 @@ async function boot() {
 
   function showIslandCard(isl) {
     const p = parkOf(isl.name);
-    $('#infoname').textContent = EN ? dataText(isl, 'name') : isl.name + '島';
+    $('#infoname').textContent = EN ? dataText(isl, 'name') : isl.name + DATA.labels.island;
     $('#infosub').textContent = p ? tr('有 ' + p.count + ' 處親子景點', p.count + (p.count === 1 ? ' family park' : ' family parks')) : tr('景點資料待補', 'Park data coming soon');
     const box = $('#infobody');
     let html = '<p>' + esc(islandSummary(isl)) + '</p>';
@@ -3559,7 +3594,7 @@ async function boot() {
     const isl = DATA.islands.find((i) => i.id === it.islandId);
     const nm = dataText(it, 'name');
     $('#infoname').textContent = nm;
-    $('#infosub').textContent = (isl ? dataText(isl, 'name') + (EN ? ' · ' : '・') : '') + ageText(it.age);
+    $('#infosub').textContent = tr(DATA.labels.item, 'Attraction') + '・' + (isl ? dataText(isl, 'name') + (EN ? ' · ' : '・') : '') + ageText(it.age);
     const box = $('#infobody');
     let html = '<img class="thumb" data-thumb="' + it.id + '" alt="' + esc(nm) + tr('模型縮圖', ' model thumbnail') + '" src="' + makeThumb(it) + '">';
     html += '<p>' + esc(dataText(it, 'summary')) + '</p>';
@@ -3578,7 +3613,7 @@ async function boot() {
   function showFlowCard(f) {
     const A = DATA.islands.find((i) => i.id === (f.fromIslandId || f.from)), B = DATA.islands.find((i) => i.id === (f.toIslandId || f.to));
     const fw = walkers.filter((w) => w.flowId === f.id);
-    $('#infoname').textContent = flowName(f);
+    $('#infoname').textContent = flowName(f) + '・' + tr(DATA.labels.flow, 'Route');
     $('#infosub').textContent = f.evidence === 'pending'
       ? tr('跨海船運・待確認關係', 'Ferry link · pending')
       : (f.evidence === 'documented' ? tr('合作關係・有來源', 'Partnership · sourced') : tr('陸上順遊・主題關聯', 'Land day trip · thematic'));
@@ -3767,11 +3802,6 @@ async function boot() {
   }
 
   $('#sidebar').hidden = isSheetLayout(); // 與 CSS 同一把尺，手機預設收起
-  $('#tab-cat').textContent = DATA.labels.tabs.cat;
-  $('#tab-flow').textContent = DATA.labels.tabs.flow;
-  $('#sbq').placeholder = DATA.labels.searchPlaceholder;
-  $('#brand h1').textContent = DATA.meta.title;
-  $('#brand p').textContent = DATA.meta.subtitle + '｜' + DATA.meta.audience;
   renderSidebar();
   log('全台親子島載入完成，22 島就緒', null, false, 'Taiwan Family Islands loaded: 22 islands ready');
   log('角色模擬啟動：' + walkers.length + ' 名角色走陸上順遊與島嶼步道（SIMULATION）', null, false,
@@ -3838,6 +3868,7 @@ async function boot() {
     DATA.islands.forEach((isl, i) => {
       const meta = islandLabelMeta.get(isl.id);
       if (!meta) return;
+      if (meta.el.dataset.full) { meta.el.innerHTML = meta.el.dataset.full; meta.el.classList.remove('compact'); delete meta.el.dataset.full; }
       v.copy(labelAnchors[i]).project(camera);
       if (v.z < -1 || v.z > 1) { meta.el.classList.add('lbl-hidden'); meta.el.style.visibility = 'hidden'; return; }
       const compact = meta.el.classList.contains('compact');
@@ -3865,7 +3896,10 @@ async function boot() {
       const pad = prev ? -8 : 8;
       const conflict = () => kept.some((r) => rectsOverlap(rect, r, pad));
       let show = !conflict();
-      if (!show && e.island && !e.selected && !e.el.classList.contains('compact')) {
+      if (!show && e.island && !e.selected && !e.el.dataset.full) {
+        e.el.dataset.full = e.el.innerHTML;
+        const numEl = e.el.querySelector('.num');
+        e.el.innerHTML = numEl ? numEl.outerHTML : e.el.innerHTML;
         e.el.classList.add('compact');
         const sz = measureLabel(e.el, true, 78, 16);
         rect.left = e.x - sz.w / 2; rect.right = e.x + sz.w / 2;
@@ -3880,6 +3914,12 @@ async function boot() {
     return entries.length;
   }
   applyLang(LANG); // 初次套用語言（含 ?lang=en），不改變任何資料 ID 或選取狀態
+  $('#tab-cat').textContent = DATA.labels.tabs.cat;
+  $('#tab-flow').textContent = DATA.labels.tabs.flow;
+  $('#sbq').placeholder = DATA.labels.searchPlaceholder;
+  $('#brand h1').textContent = DATA.meta.title;
+  $('#brand p').textContent = DATA.meta.subtitle + '｜' + DATA.meta.audience;
+  document.title = DATA.meta.title + '｜' + DATA.labels.world + '・' + DATA.meta.subtitle;
   applyMotionPrefs();
   const onMediaChange = (mq, fn) => {
     if (mq.addEventListener) mq.addEventListener('change', fn);
