@@ -288,7 +288,7 @@
   </div>
   <div id="sb-cat" role="tabpanel"></div>
   <div id="sb-flow" role="tabpanel" hidden></div>
-  <div id="logwrap"><details open><summary class="lg-head"><b>活動日誌</b><span>SIMULATION</span></summary><div class="lg-filter"><select id="logflow" aria-label="依關係篩選活動日誌" data-en-aria="Filter activity log by link"><option value="">全部模擬事件</option><option value="all">全部（含操作）</option></select></div><ol id="loglist"></ol></details></div>
+  <div id="logwrap"><details open><summary class="lg-head"><b data-en="Activity Log">活動日誌</b><span>SIMULATION</span></summary><div class="lg-filter"><select id="logflow" aria-label="依關係篩選活動日誌" data-en-aria="Filter activity log by link"><option value="">全部模擬事件</option><option value="all">全部（含操作）</option></select></div><ol id="loglist"></ol></details></div>
 </aside>
 <button id="sb-toggle" type="button">清單</button>
 
@@ -562,7 +562,8 @@ function normalizeItems(d) {
   for (const it of d.items) {
     const s = (d.parkDetail || {})[it.name] || {};
     it.summary = s.kid || it.summary;
-    it.facts = (s.toys || '').split('、').filter((x) => x).slice(0, 3);
+    const _ff = (s.toys || '').split('、').filter((x) => x).slice(0, 3);
+    if (_ff.length) it.facts = _ff;
     it.metrics = [];
     const si = d.islands.find((x) => x.id === it.islandId);
     if (s.power) it.metrics.push({ label: '放電', value: '⚡'.repeat(s.power), note: POWER_NAMES[s.power], kind: 'actual', scope: si ? si.name : '', sourceIds: ['parks-appjs'] });
@@ -3851,7 +3852,7 @@ async function boot() {
     camera.updateMatrixWorld();
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
     const occupied = [];
-    for (const sel of ['#brand', '#hud', '#timebar', '#legend']) {
+    for (const sel of ['#brand', '#hud', '#timebar', '#legend', '#sidebar', '#info.show']) {
       const el = $(sel);
       if (!el) continue;
       const cs = getComputedStyle(el);
@@ -3914,11 +3915,14 @@ async function boot() {
     return entries.length;
   }
   applyLang(LANG); // 初次套用語言（含 ?lang=en），不改變任何資料 ID 或選取狀態
-  $('#tab-cat').textContent = DATA.labels.tabs.cat;
-  $('#tab-flow').textContent = DATA.labels.tabs.flow;
-  $('#sbq').placeholder = DATA.labels.searchPlaceholder;
-  $('#brand h1').textContent = DATA.meta.title;
-  $('#brand p').textContent = DATA.meta.subtitle + '｜' + DATA.meta.audience;
+  const setT = (sel, zh) => { const el = $(sel); if (!el) return; el.dataset.zh = zh; el.textContent = EN ? (el.dataset.en || zh) : zh; };
+  setT('#tab-cat', DATA.labels.tabs.cat);
+  setT('#tab-flow', DATA.labels.tabs.flow);
+  const sbq = $('#sbq');
+  if (sbq) { sbq.dataset.zhPlaceholder = DATA.labels.searchPlaceholder; sbq.placeholder = EN ? (sbq.dataset.enPlaceholder || DATA.labels.searchPlaceholder) : DATA.labels.searchPlaceholder; }
+  const bh1 = $('#brand h1'), bpp = $('#brand p');
+  if (bh1) { bh1.dataset.zh = DATA.meta.title; bh1.textContent = EN ? (bh1.dataset.en || DATA.meta.title) : DATA.meta.title; }
+  if (bpp) { const zhs = DATA.meta.subtitle + '｜' + DATA.meta.audience; bpp.dataset.zh = zhs; bpp.textContent = EN ? (bpp.dataset.en || zhs) : zhs; }
   document.title = DATA.meta.title + '｜' + DATA.labels.world + '・' + DATA.meta.subtitle;
   applyMotionPrefs();
   const onMediaChange = (mq, fn) => {
