@@ -614,7 +614,7 @@ async function boot() {
     const foamMat = FOAM_MAT;
     const foam = new THREE.Mesh(FOAM_GEO, foamMat);
     foam.position.y = WATER_Y + 0.03; foam.renderOrder = 2; g.add(foam);
-    shallowMats.push(shallowMat); foamMats.push(foamMat);
+
 
     // 島嶼 pill 標籤（前側崖邊）
     const p = parkOf(isl.name);
@@ -870,11 +870,12 @@ async function boot() {
     mix(ENV.water, a.water, b.water);
     return ENV;
   }
+  const _sd = new THREE.Vector3();
   function sunDir(minutes) {
     const t = THREE.MathUtils.clamp((minutes - 360) / 720, 0, 1);
     const az = Math.PI * (0.15 + 0.7 * t);
     const el = 0.35 + Math.sin(t * Math.PI) * 0.75;
-    return new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), 0.55 * Math.cos(el) + 0.35).normalize();
+    return _sd.set(Math.cos(az) * Math.cos(el), Math.sin(el), 0.55 * Math.cos(el) + 0.35).normalize();
   }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timeBtns = [...document.querySelectorAll('#timebar button')];
@@ -894,10 +895,9 @@ async function boot() {
     waterUni.fogColor.value.copy(e.hor);
     waterUni.fogNear.value = scene.fog.near;
     waterUni.fogFar.value = scene.fog.far;
-    for (const m of shallowMats) m.color.copy(e.water).lerp(SHALLOW_LIGHT, 0.3);
-    for (const m of foamMats) m.opacity = 0.55 * (1 - 0.5 * e.night);
+    SHALLOW_MAT.color.copy(e.water).lerp(SHALLOW_LIGHT, 0.3);
+    FOAM_MAT.opacity = 0.55 * (1 - 0.5 * e.night);
     WALL_MAT.color.copy(WALL_BASE).multiplyScalar(1 - 0.3 * e.night);
-    updateClock();
   }
   function updateClock() { // 時鐘文字每秒更新一次即可
     const hh = String(Math.floor(state.envMinutes / 60)).padStart(2, '0');
