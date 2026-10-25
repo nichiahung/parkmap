@@ -2246,7 +2246,7 @@ async function boot() {
   window.__modelIndex = state.modelIndex;
   $('#modelstats').textContent = '全台親子島・' + DATA.items.length + ' 景點・' + Object.keys(MODELS).length +
     ' 種模型原型・靜態零件庫 ' + kitMeshList.length + ' 個 InstancedMesh';
-  console.info('[island-3d stage3]', {
+  console.info('[island-3d stage4]', {
     prototypes: Object.keys(MODELS).length, parts: kitParts.length,
     kitInstancedMeshes: kitMeshList.length, items: ITEM_BY_ID.size,
     byItem: byItem.size, mode: DATA.meta.mode
@@ -2817,6 +2817,7 @@ async function boot() {
     highlightItem(state.selectedItemId);
     renderSidebar();
     updateRelVisibility();
+    setLogFilter('');
     const box = $('#info');
     if (!id) { state.selectedItemId = null; highlightItem(null); box.classList.remove('show'); dirty = true; return; }
     const isl = DATA.islands.find((i) => i.id === id);
@@ -3085,7 +3086,7 @@ async function boot() {
     for (const f of DATA.flows) {
       const A = DATA.islands.find((i) => i.id === f.fromIslandId), B = DATA.islands.find((i) => i.id === f.toIslandId);
       if (!matchQ(q, f.name, f.description, A.name, B.name)) continue;
-      html += '<button class="flowrow" data-flow="' + f.id + '">〜 ' + esc(f.name) + ' <small>(' + esc(A.name) + '↔' + esc(B.name)       + (f.evidence === 'pending' ? '・待確認' : '・主題關聯') + ')</small></button>';
+      html += '<button class="flowrow" data-flow="' + f.id + '">〜 ' + esc(f.name) + ' <small>(' + esc(A.name) + '↔' + esc(B.name)       + (f.evidence === 'pending' ? '・待確認' : (f.evidence === 'documented' ? '・有來源' : '・主題關聯')) + ')</small></button>';
     }
     box.innerHTML = html || '<div class="sb-empty">找不到關係，換個關鍵字試試</div>';
     box.querySelectorAll('button[data-flow]').forEach((b) => b.addEventListener('click', () => selectFlow(b.dataset.flow, true)));
@@ -3141,7 +3142,7 @@ async function boot() {
     const dirTxt = f.direction === 'both' ? '雙向可往返' : (f.direction === 'forward' ? '單向' : '無方向');
     const fw = walkers.filter((w) => w.flowId === f.id);
     $('#infoname').textContent = f.name;
-    $('#infosub').textContent = (f.evidence === 'pending' ? '跨海船運・待確認關係' : '陸上順遊・主題關聯');
+    $('#infosub').textContent = (f.evidence === 'pending' ? '跨海船運・待確認關係' : (f.evidence === 'documented' ? '合作關係・有來源' : '陸上順遊・主題關聯'));
     const box = $('#infobody');
     box.innerHTML = '<p>' + esc(f.description || '展示用關係線。') + '</p>'
       + '<dl class="kv">'
