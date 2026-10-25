@@ -176,7 +176,7 @@
   <h1>全台親子島</h1>
   <p>全台親子景點放電地圖｜帶 2 到 12 歲小朋友的家長・拖曳旋轉・點島嶼看景點</p>
   <p class="src">景點資料：b/app.js PARKS（22 筆）・16 縣市待補</p>
-  <p class="src" id="modelstats">階段 2：建立模型原型與零件庫…</p>
+  <p class="src" id="modelstats">正在組合全台親子島…</p>
 </header>
 
 <nav id="timebar" aria-label="展示時間切換">
@@ -605,11 +605,11 @@ async function boot() {
   let dirty = true;
   // localStorage：讀寫都 try/catch，不可阻止展示
   try {
-    const saved = JSON.parse(localStorage.getItem('island3d-stage2') || '{}');
+    const saved = JSON.parse(localStorage.getItem('island3d') || '{}');
     if (typeof saved.envMinutes === 'number') state.envMinutes = Math.min(1439, Math.max(0, saved.envMinutes));
   } catch (e) { /* 忽略 */ }
   const persist = () => {
-    try { localStorage.setItem('island3d-stage2', JSON.stringify({ envMinutes: Math.round(state.envMinutes) })); }
+    try { localStorage.setItem('island3d', JSON.stringify({ envMinutes: Math.round(state.envMinutes) })); }
     catch (e) { /* 忽略 */ }
   };
 
@@ -1698,9 +1698,9 @@ async function boot() {
   state.modelMeshes = kitMeshList;
   state.modelIndex = { byItem, byMesh, items: ITEM_BY_ID };
   window.__modelIndex = state.modelIndex;
-  $('#modelstats').textContent = '階段 2：' + Object.keys(MODELS).length + ' 種模型原型・' + kitParts.length +
-    ' 個零件・靜態零件庫 ' + kitMeshList.length + ' 個 InstancedMesh';
-  console.info('[island-3d stage2]', {
+  $('#modelstats').textContent = '全台親子島・' + DATA.items.length + ' 景點・' + Object.keys(MODELS).length +
+    ' 種模型原型・靜態零件庫 ' + kitMeshList.length + ' 個 InstancedMesh';
+  console.info('[island-3d stage3]', {
     prototypes: Object.keys(MODELS).length, parts: kitParts.length,
     kitInstancedMeshes: kitMeshList.length, items: ITEM_BY_ID.size,
     byItem: byItem.size, mode: DATA.meta.mode
@@ -2412,12 +2412,10 @@ async function boot() {
   $('#sb-toggle').addEventListener('click', () => { $('#sidebar').hidden = !$('#sidebar').hidden; });
 
   /* ---------- 階段 3：搜尋側欄、卡片、縮圖 ---------- */
-  const PARK_DETAIL = DATA.parkDetail;
-  const POWER_TXT = ['', '輕量放電', '中度放電', '重度放電'];
+  const POWER_TXT = ['', '輕量放電', '中度放電', '重度放電']; // 保留：後續階段與正規化共用級別名
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const islandItems = (islId) => DATA.items.filter((it) => it.islandId === islId);
   const matchQ = (q, ...fields) => { q = (q || '').trim(); if (!q) return true; return fields.join(' ').indexOf(q) !== -1; };
-  const powerTxt = (p) => '⚡'.repeat(p) + ' ' + POWER_TXT[p];
   let sbTab = 'cat';
 
   function renderSidebar() {
