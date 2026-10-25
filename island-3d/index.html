@@ -1652,6 +1652,8 @@ async function boot() {
     return mat;
   }
 
+  const walkerName = (w) => tr(w.name, w.nameEn || w.name);
+  const walkerNameEn = (w) => w.nameEn || w.name;
   for (const w of walkers) {
     const el = document.createElement('button');
     el.type = 'button';
@@ -1721,8 +1723,6 @@ async function boot() {
     : d === 'forward' ? tr('單向', 'One way') : tr('無方向', 'No direction');
   const actorText = (a) => tr(a === 'student' ? '學童' : '家長', a === 'student' ? 'Child' : 'Parent');
   const actorTextEn = (a) => a === 'student' ? 'Child' : 'Parent';
-  const walkerName = (w) => tr(w.name, w.nameEn || w.name);
-  const walkerNameEn = (w) => w.nameEn || w.name;
   const payloadTextEn = (p) => PAYLOAD_EN[p] || p || '—';
   const metricLabel = (l) => l === '放電' ? tr('放電', 'Energy') : l === '遊具' ? tr('遊具', 'Play features') : l;
   const AGE_EN = {
@@ -2797,6 +2797,7 @@ async function boot() {
       }
     }
     const seaMesh = (list, mat) => {
+      if (!list.length) return null; // 手機減量時小島清單為空，直接跳過
       const m = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(list, false), mat);
       seaGroup.add(m); return m;
     };
