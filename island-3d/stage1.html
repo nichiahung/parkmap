@@ -147,7 +147,7 @@ function fail(title, msg) {
 $('#reloadbtn').addEventListener('click', () => location.reload());
 window.addEventListener('error', (e) => {
   if ($('#errbox').classList.contains('show')) return;
-  if (!window.__booted) fail('載入發生問題', String((e && e.message) || e) + '\n可按下方按鈕重新載入。');
+  fail(window.__booted ? '執行期錯誤' : '載入發生問題', String((e && e.message) || e) + '\n可按下方按鈕重新載入。');
 });
 window.addEventListener('unhandledrejection', (e) => {
   if ($('#errbox').classList.contains('show')) return;
@@ -185,28 +185,34 @@ const DATA = {
   },
   // 22 島一縣市一島：axial 座標排成台灣形狀（北在上＝ -z 為北，r 愈小愈北）
   islands: [
-    { id: 'taipei',     name: '台北',   en: 'Taipei',         q: 0,  r: -6, color: '#E85A24', groundPattern: 'brick' },
-    { id: 'keelung',    name: '基隆',   en: 'Keelung',        q: 1,  r: -6, color: '#E85A24', groundPattern: 'spots' },
-    { id: 'newtaipei',  name: '新北',   en: 'New Taipei',     q: 0,  r: -5, color: '#1F8A5B', groundPattern: 'stripes' },
-    { id: 'yilan',      name: '宜蘭',   en: 'Yilan',          q: 1,  r: -5, color: '#3e7c8c', groundPattern: 'brick' },
-    { id: 'taoyuan',    name: '桃園',   en: 'Taoyuan',        q: -1, r: -4, color: '#db6a41', groundPattern: 'spots' },
-    { id: 'hsinchucity',name: '新竹市', en: 'Hsinchu City',   q: -1, r: -3, color: '#3e7c8c', groundPattern: 'stripes' },
-    { id: 'hsinchuco',  name: '新竹縣', en: 'Hsinchu County', q: 0,  r: -3, color: '#71806a', groundPattern: 'brick' },
-    { id: 'miaoli',     name: '苗栗',   en: 'Miaoli',         q: -1, r: -2, color: '#71806a', groundPattern: 'spots' },
-    { id: 'taichung',   name: '台中',   en: 'Taichung',       q: -1, r: -1, color: '#1F8A5B', groundPattern: 'brick' },
-    { id: 'nantou',     name: '南投',   en: 'Nantou',         q: 0,  r: -1, color: '#71806a', groundPattern: 'stripes' },
-    { id: 'hualien',    name: '花蓮',   en: 'Hualien',        q: 1,  r: -1, color: '#3e7c8c', groundPattern: 'spots' },
-    { id: 'changhua',   name: '彰化',   en: 'Changhua',       q: -1, r: 0,  color: '#b48560', groundPattern: 'brick' },
-    { id: 'yunlin',     name: '雲林',   en: 'Yunlin',         q: -1, r: 1,  color: '#b48560', groundPattern: 'spots' },
-    { id: 'taitung',    name: '台東',   en: 'Taitung',        q: 1,  r: 1,  color: '#58a6a6', groundPattern: 'stripes' },
-    { id: 'chiayicity', name: '嘉義市', en: 'Chiayi City',    q: -1, r: 2,  color: '#E85A24', groundPattern: 'brick' },
-    { id: 'chiayico',   name: '嘉義縣', en: 'Chiayi County',  q: 0,  r: 2,  color: '#b48560', groundPattern: 'spots' },
-    { id: 'tainan',     name: '台南',   en: 'Tainan',         q: -1, r: 3,  color: '#db6a41', groundPattern: 'stripes' },
-    { id: 'kaohsiung',  name: '高雄',   en: 'Kaohsiung',      q: -1, r: 4,  color: '#db6a41', groundPattern: 'brick' },
-    { id: 'pingtung',   name: '屏東',   en: 'Pingtung',       q: 0,  r: 4,  color: '#58a6a6', groundPattern: 'spots' },
-    { id: 'penghu',     name: '澎湖',   en: 'Penghu',         q: -3, r: 2,  color: '#58a6a6', groundPattern: 'stripes' },
-    { id: 'kinmen',     name: '金門',   en: 'Kinmen',         q: -3, r: 0,  color: '#6f7fb5', groundPattern: 'brick' },
-    { id: 'lienchiang', name: '連江',   en: 'Lienchiang',     q: -1, r: -7, color: '#6f7fb5', groundPattern: 'spots' }
+    { id: 'taipei', name: '台北', en: 'Taipei', summary: '4 處親子景點：都會遊戲場與河濱放電', summaryEn: '4 playgrounds: city playfields and riverside fun', icon: 'park', treeType: 'cherry', q: 0, r: -6, color: '#E85A24', groundPattern: 'brick', itemIds: [] },
+    { id: 'keelung', name: '基隆', en: 'Keelung', summary: '5 處親子景點：海港遊戲場與海景', summaryEn: '5 playgrounds: harbor playfields and sea views', icon: 'park', treeType: 'pine', q: 1, r: -6, color: '#E85A24', groundPattern: 'spots', itemIds: [] },
+    { id: 'newtaipei', name: '新北', en: 'New Taipei', summary: '5 處親子景點：堤坡樂園與森林步道', summaryEn: '5 playgrounds: embankment parks and forest trails', icon: 'park', treeType: 'willow', q: 0, r: -5, color: '#1F8A5B', groundPattern: 'stripes', itemIds: [] },
+    { id: 'yilan', name: '宜蘭', en: 'Yilan', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'willow', q: 1, r: -5, color: '#3e7c8c', groundPattern: 'brick', itemIds: [] },
+    { id: 'taoyuan', name: '桃園', en: 'Taoyuan', summary: '6 處親子景點：梯田松鼠與長頸鹿樂園', summaryEn: '6 playgrounds: terraced park, squirrel and giraffe zones', icon: 'park', treeType: 'fruit', q: -1, r: -4, color: '#db6a41', groundPattern: 'spots', itemIds: [] },
+    { id: 'hsinchucity', name: '新竹市', en: 'Hsinchu City', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'cherry', q: -1, r: -3, color: '#3e7c8c', groundPattern: 'stripes', itemIds: [] },
+    { id: 'hsinchuco', name: '新竹縣', en: 'Hsinchu County', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'pine', q: 0, r: -3, color: '#71806a', groundPattern: 'brick', itemIds: [] },
+    { id: 'miaoli', name: '苗栗', en: 'Miaoli', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'fruit', q: -1, r: -2, color: '#71806a', groundPattern: 'spots', itemIds: [] },
+    { id: 'taichung', name: '台中', en: 'Taichung', summary: '1 處親子景點：飛碟遊戲場與雙軌滑索', summaryEn: '1 playground: UFO play zone and dual zipline', icon: 'park', treeType: 'willow', q: -1, r: -1, color: '#1F8A5B', groundPattern: 'brick', itemIds: [] },
+    { id: 'nantou', name: '南投', en: 'Nantou', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'pine', q: 0, r: -1, color: '#71806a', groundPattern: 'stripes', itemIds: [] },
+    { id: 'hualien', name: '花蓮', en: 'Hualien', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'pine', q: 1, r: -1, color: '#3e7c8c', groundPattern: 'spots', itemIds: [] },
+    { id: 'changhua', name: '彰化', en: 'Changhua', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'cherry', q: -1, r: 0, color: '#b48560', groundPattern: 'brick', itemIds: [] },
+    { id: 'yunlin', name: '雲林', en: 'Yunlin', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'fruit', q: -1, r: 1, color: '#b48560', groundPattern: 'spots', itemIds: [] },
+    { id: 'taitung', name: '台東', en: 'Taitung', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'willow', q: 1, r: 1, color: '#58a6a6', groundPattern: 'stripes', itemIds: [] },
+    { id: 'chiayicity', name: '嘉義市', en: 'Chiayi City', summary: '1 處親子景點：銅板價博物館兒童廳', summaryEn: '1 spot: budget-friendly museum kids zone', icon: 'museum', treeType: 'willow', q: -1, r: 2, color: '#E85A24', groundPattern: 'brick', itemIds: [] },
+    { id: 'chiayico', name: '嘉義縣', en: 'Chiayi County', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'fruit', q: 0, r: 2, color: '#b48560', groundPattern: 'spots', itemIds: [] },
+    { id: 'tainan', name: '台南', en: 'Tainan', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'palm', q: -1, r: 3, color: '#db6a41', groundPattern: 'stripes', itemIds: [] },
+    { id: 'kaohsiung', name: '高雄', en: 'Kaohsiung', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'palm', q: -1, r: 4, color: '#db6a41', groundPattern: 'brick', itemIds: [] },
+    { id: 'pingtung', name: '屏東', en: 'Pingtung', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'palm', q: 0, r: 4, color: '#58a6a6', groundPattern: 'spots', itemIds: [] },
+    { id: 'penghu', name: '澎湖', en: 'Penghu', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'palm', q: -3, r: 2, color: '#58a6a6', groundPattern: 'stripes', itemIds: [] },
+    { id: 'kinmen', name: '金門', en: 'Kinmen', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'palm', q: -3, r: 0, color: '#6f7fb5', groundPattern: 'brick', itemIds: [] },
+    { id: 'lienchiang', name: '連江', en: 'Lienchiang', summary: '景點資料待補', summaryEn: 'Park data coming soon', icon: 'todo', treeType: 'willow', q: -1, r: -7, color: '#6f7fb5', groundPattern: 'spots', itemIds: [] }
+  ],
+  // 跨海船線（離島接本島路網；階段 4 角色與順遊共用）
+  ferries: [
+    { id: 'ferry-chiayico-penghu', from: 'chiayico', to: 'penghu', name: '嘉義—澎湖船', nameEn: 'Chiayi-Penghu ferry' },
+    { id: 'ferry-penghu-kinmen', from: 'penghu', to: 'kinmen', name: '澎湖—金門船', nameEn: 'Penghu-Kinmen ferry' },
+    { id: 'ferry-keelung-lienchiang', from: 'keelung', to: 'lienchiang', name: '基隆—連江船', nameEn: 'Keelung-Lienchiang ferry' }
   ],
   // 真實景點資料（b/app.js PARKS 逐筆核對；嘉義併入嘉義市）
   parks: {
@@ -251,8 +257,13 @@ function validateDATA(d) {
   const colors = /^#[0-9a-f]{6}$/i;
   const groundKinds = new Set(['brick', 'spots', 'stripes']);
   for (const isl of d.islands) {
-    for (const f of ['id', 'name', 'en', 'color', 'groundPattern']) {
+    for (const f of ['id', 'name', 'en', 'summary', 'summaryEn', 'icon', 'treeType', 'itemIds', 'color', 'groundPattern']) {
       if (!isl[f]) throw new Error('島嶼缺少欄位 ' + f + '：' + (isl.name || isl.id || '未知'));
+    }
+    if (!Array.isArray(isl.itemIds)) throw new Error('島嶼 itemIds 必須是陣列：' + isl.name);
+    if (!isl.summary || !isl.summaryEn) throw new Error('島嶼缺少中英文摘要：' + isl.name);
+    for (const id of isl.itemIds) {
+      if (!d.items.some((it) => it.id === id)) throw new Error('島嶼 itemIds 無對應項目：' + isl.name + '／' + id);
     }
     if (!Number.isInteger(isl.q) || !Number.isInteger(isl.r)) throw new Error('島嶼座標必須是整數：' + isl.name);
     if (!colors.test(isl.color)) throw new Error('島嶼顏色格式錯誤：' + isl.name);
@@ -275,10 +286,29 @@ function validateDATA(d) {
     }
   }
   const total = Object.values(d.parks).reduce((n, p) => n + p.count, 0);
-  if (total !== 22) throw new Error('景點總數應為 22，實際 ' + total);
-  if (d.islands.length !== 22) throw new Error('島嶼應為 22 座，實際 ' + d.islands.length);
+  if (!(total > 0)) throw new Error('景點總數無效');
+  if (d.islands.length < 1) throw new Error('島嶼數量無效');
   const todo = d.islands.filter((i) => !d.parks[i.name]).length;
-  if (todo !== 16) throw new Error('無景點縣市應為 16 座，實際 ' + todo);
+  if (todo !== d.islands.length - Object.keys(d.parks).length) throw new Error('待補島嶼計算不一致，實際待補 ' + todo);
+  // 路網連通性：橋樑相鄰＋船線，全部島嶼須連通
+  {
+    const idOf = new Map(d.islands.map((i) => [i.id, i]));
+    const cell = new Map(d.islands.map((i) => [i.q + ',' + i.r, i.id]));
+    const adj = new Map(d.islands.map((i) => [i.id, new Set()]));
+    const D6 = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+    for (const isl of d.islands) for (const [dq, dr] of D6) {
+      const nb = cell.get((isl.q + dq) + ',' + (isl.r + dr));
+      if (nb) { adj.get(isl.id).add(nb); adj.get(nb).add(isl.id); }
+    }
+    for (const f of d.ferries || []) {
+      if (!idOf.has(f.from) || !idOf.has(f.to)) throw new Error('船線端點無對應島嶼：' + f.id);
+      adj.get(f.from).add(f.to); adj.get(f.to).add(f.from);
+    }
+    const seen = new Set([d.islands[0].id]);
+    const queue = [d.islands[0].id];
+    while (queue.length) { const cur = queue.pop(); for (const nb of adj.get(cur)) if (!seen.has(nb)) { seen.add(nb); queue.push(nb); } }
+    if (seen.size !== d.islands.length) throw new Error('群島未完全連通（橋＋船），僅連通 ' + seen.size + '／' + d.islands.length);
+  }
 
   if (!Number.isFinite(d.environment.startMinutes) || !Number.isFinite(d.environment.minutesPerSecond)) {
     throw new Error('environment 缺少初始時間或時間速度');
@@ -518,6 +548,20 @@ async function boot() {
   const hexTopGeoBase = () => new THREE.CircleGeometry(R - 0.05, 6).rotateZ(Math.PI / 6).rotateX(-Math.PI / 2);
   const hexRing = (inner, outer) => new THREE.RingGeometry(inner, outer, 6, 1).rotateZ(Math.PI / 6).rotateX(-Math.PI / 2);
   const CORAL = new THREE.Color(DATA.config.brand);
+  // 共用幾何與材質（島面 UV 逐島不同故不共用；其餘 22 島共用，減少 draw 前配置）
+  const WALL_H = TOP - (WATER_Y - 0.5);
+  const WALL_GEO = new THREE.CylinderGeometry(R - 0.02, (R - 0.02) * 0.9, WALL_H, 6, 1, true);
+  const WALL_BASE = new THREE.Color('#c9b18c');
+  const WALL_MAT = new THREE.MeshStandardMaterial({ color: '#c9b18c', roughness: 0.95 });
+  const BAND_GEO = new THREE.CylinderGeometry(R + 0.005, R + 0.005, 0.16, 6, 1, true);
+  const CURB_GEO = hexRing(1.8 - 0.17, 1.8 + 0.17);
+  const PATH_GEO = hexRing(1.8 - 0.14, 1.8 + 0.14);
+  const SHALLOW_GEO = hexRing(R + 0.05, R + 0.7);
+  const FOAM_GEO = hexRing(R + 0.02, R + 0.16);
+  const CURB_MAT = new THREE.MeshStandardMaterial({ color: '#e4d6c3', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 });
+  const PATH_MAT = new THREE.MeshStandardMaterial({ color: '#c79a68', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2 });
+  const SHALLOW_MAT = new THREE.MeshBasicMaterial({ color: '#bfe0e2', transparent: true, opacity: 0.8, depthWrite: false });
+  const FOAM_MAT = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false });
 
   // 世界中心（太陽與全景基準）
   const centers = DATA.islands.map((i) => axialToWorld(i.q, i.r));
@@ -548,33 +592,27 @@ async function boot() {
     g.add(top);
     state.islandMeshes.set(isl.id, { group: g, topMat, baseColor: topMat.color.clone(), accent: new THREE.Color(isl.color) });
 
-    // 側壁（與島面同相位，向下延伸到水面以下）
-    const wallH = TOP - (WATER_Y - 0.5);
-    const wall = new THREE.Mesh(
-      new THREE.CylinderGeometry(R - 0.02, (R - 0.02) * 0.9, wallH, 6, 1, true),
-      new THREE.MeshStandardMaterial({ color: '#c9b18c', roughness: 0.95 }));
-    wall.position.y = TOP - wallH / 2; g.add(wall);
+    // 側壁（與島面同相位，向下延伸到水面以下；幾何材質共用，夜間由 applyEnv 統一調色）
+    const wall = new THREE.Mesh(WALL_GEO, WALL_MAT);
+    wall.position.y = (TOP + WATER_Y - 0.5) / 2; g.add(wall);
 
     // 頂緣彩色圖案帶（高 0.16）
-    const band = new THREE.Mesh(
-      new THREE.CylinderGeometry(R + 0.005, R + 0.005, 0.16, 6, 1, true),
+    const band = new THREE.Mesh(BAND_GEO,
       new THREE.MeshStandardMaterial({ color: isl.color, roughness: 0.8 }));
     band.position.y = TOP - 0.08; g.add(band);
 
     // 六角形步道環（中心線外接半徑 1.8、寬 0.28）＋路緣
-    const curb = new THREE.Mesh(hexRing(1.8 - 0.17, 1.8 + 0.17),
-      new THREE.MeshStandardMaterial({ color: '#e4d6c3', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 }));
+    const curb = new THREE.Mesh(CURB_GEO, CURB_MAT);
     curb.rotation.y = 0; curb.position.y = TOP + 0.006; curb.receiveShadow = true; g.add(curb);
-    const path = new THREE.Mesh(hexRing(1.8 - 0.14, 1.8 + 0.14),
-      new THREE.MeshStandardMaterial({ color: '#c79a68', roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2 }));
+    const path = new THREE.Mesh(PATH_GEO, PATH_MAT);
     path.position.y = TOP + 0.012; path.receiveShadow = true; g.add(path);
 
     // 外圈淺水環＋白色泡沫環
-    const shallowMat = new THREE.MeshBasicMaterial({ color: '#bfe0e2', transparent: true, opacity: 0.8, depthWrite: false });
-    const shallow = new THREE.Mesh(hexRing(R + 0.05, R + 0.7), shallowMat);
+    const shallowMat = SHALLOW_MAT;
+    const shallow = new THREE.Mesh(SHALLOW_GEO, shallowMat);
     shallow.position.y = WATER_Y + 0.02; shallow.renderOrder = 1; g.add(shallow);
-    const foamMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false });
-    const foam = new THREE.Mesh(hexRing(R + 0.02, R + 0.16), foamMat);
+    const foamMat = FOAM_MAT;
+    const foam = new THREE.Mesh(FOAM_GEO, foamMat);
     foam.position.y = WATER_Y + 0.03; foam.renderOrder = 2; g.add(foam);
     shallowMats.push(shallowMat); foamMats.push(foamMat);
 
@@ -657,6 +695,15 @@ async function boot() {
       beamMatrices.push({ m: tmpM.clone(), len: span });
     }
   }
+  // 跨海船線（水面虛線，pending 點線語意；路網同步建邊不斷網）
+  for (const f of DATA.ferries) {
+    const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+    const ca = axialToWorld(A.q, A.r), cb = axialToWorld(B.q, B.r);
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(ca.x, WATER_Y + 0.06, ca.z), new THREE.Vector3(cb.x, WATER_Y + 0.06, cb.z)]);
+    const line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: DATA.config.brand, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.9 }));
+    line.computeLineDistances(); world.add(line);
+  }
   {
     const deckGeo = new THREE.BoxGeometry(0.56, 0.07, 0.16);
     const decks = new THREE.InstancedMesh(deckGeo, new THREE.MeshStandardMaterial({ color: '#c98d5f', roughness: 0.85 }), deckMatrices.length);
@@ -704,7 +751,24 @@ async function boot() {
       const na = keyOf.get(a.id + ':e' + ((ea % 6) + 6) % 6);
       const nb = keyOf.get(b.id + ':e' + ((eb % 6) + 6) % 6);
       if (na == null || nb == null) throw new Error('橋樑路網節點缺失：' + a.name + '↔' + b.name);
-      link(na, nb);
+      const mx = (nodes[na].x + nodes[nb].x) / 2, mz = (nodes[na].z + nodes[nb].z) / 2;
+      const mid = addNode(mx, TOP + 0.03 + 0.05 + 0.04, mz, a.id + '~' + b.id); // 橋拱頂行走高度，不穿橋
+      link(na, mid); link(mid, nb);
+    }
+    for (const f of DATA.ferries || []) {
+      const A = DATA.islands.find((i) => i.id === f.from), B = DATA.islands.find((i) => i.id === f.to);
+      if (!A || !B) throw new Error('船線端點無對應島嶼：' + f.id);
+      let ba = -1, bb = -1, bd = Infinity;
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].island !== A.id) continue;
+        for (let j = 0; j < nodes.length; j++) {
+          if (nodes[j].island !== B.id) continue;
+          const dd = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].z - nodes[j].z);
+          if (dd < bd) { bd = dd; ba = i; bb = j; }
+        }
+      }
+      if (ba === -1) throw new Error('船線找不到靠岸節點：' + f.id);
+      link(ba, bb);
     }
     return { nodes, adj };
   }
@@ -787,24 +851,24 @@ async function boot() {
   framePanorama();
 
   /* ---------- 日夜 ---------- */
-  const C = (h) => new THREE.Color(h);
+  const _ca = new THREE.Color(), _cb = new THREE.Color();
   const SHALLOW_LIGHT = new THREE.Color('#eaf7f7');
   const KF = DATA.environment.keyframes;
+  const ENV = { top: new THREE.Color(), hor: new THREE.Color(), sun: new THREE.Color(), hs: new THREE.Color(), hg: new THREE.Color(), water: new THREE.Color(), sunI: 0, hemiI: 0, night: 0 };
   function envAt(minutes) {
     const m = ((minutes % 1440) + 1440) % 1440;
     let i = 0;
     while (i < KF.length - 2 && KF[i + 1].m <= m) i++;
     const a = KF[i], b = KF[i + 1];
     const t = THREE.MathUtils.clamp((m - a.m) / (b.m - a.m), 0, 1);
-    const mix = (ca, cb) => C(ca).lerp(C(cb), t);
-    return {
-      top: mix(a.top, b.top), hor: mix(a.hor, b.hor), sun: mix(a.sun, b.sun),
-      sunI: a.sunI + (b.sunI - a.sunI) * t,
-      hs: mix(a.hs, b.hs), hg: mix(a.hg, b.hg),
-      hemiI: a.hemiI + (b.hemiI - a.hemiI) * t,
-      night: a.night + (b.night - a.night) * t,
-      water: mix(a.water, b.water)
-    };
+    const mix = (out, ca, cb) => out.copy(_ca.set(ca)).lerp(_cb.set(cb), t);
+    mix(ENV.top, a.top, b.top); mix(ENV.hor, a.hor, b.hor); mix(ENV.sun, a.sun, b.sun);
+    ENV.sunI = a.sunI + (b.sunI - a.sunI) * t;
+    mix(ENV.hs, a.hs, b.hs); mix(ENV.hg, a.hg, b.hg);
+    ENV.hemiI = a.hemiI + (b.hemiI - a.hemiI) * t;
+    ENV.night = a.night + (b.night - a.night) * t;
+    mix(ENV.water, a.water, b.water);
+    return ENV;
   }
   function sunDir(minutes) {
     const t = THREE.MathUtils.clamp((minutes - 360) / 720, 0, 1);
@@ -813,11 +877,12 @@ async function boot() {
     return new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), 0.55 * Math.cos(el) + 0.35).normalize();
   }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const timeBtns = [...document.querySelectorAll('#timebar button')];
   function applyEnv() {
     const e = envAt(state.envMinutes);
     skyUni.uTop.value.copy(e.top); skyUni.uHorizon.value.copy(e.hor);
     skyUni.uSun.value.copy(e.sun); skyUni.uNight.value = e.night;
-    const sd = sunDir(state.envMinutes);
+    const sd = sunDir(Math.floor(state.envMinutes / 10) * 10); // 太陽方位 10 分鐘量化
     skyUni.uSunDir.value.copy(sd);
     sun.position.copy(worldCenter).addScaledVector(sd, 40);
     sun.target.position.copy(worldCenter);
@@ -831,22 +896,26 @@ async function boot() {
     waterUni.fogFar.value = scene.fog.far;
     for (const m of shallowMats) m.color.copy(e.water).lerp(SHALLOW_LIGHT, 0.3);
     for (const m of foamMats) m.opacity = 0.55 * (1 - 0.5 * e.night);
+    WALL_MAT.color.copy(WALL_BASE).multiplyScalar(1 - 0.3 * e.night);
+    updateClock();
+  }
+  function updateClock() { // 時鐘文字每秒更新一次即可
     const hh = String(Math.floor(state.envMinutes / 60)).padStart(2, '0');
     const mm = String(Math.floor(state.envMinutes % 60)).padStart(2, '0');
     $('#clock').textContent = '展示時間 ' + hh + ':' + mm;
     const cur = Math.round(state.envMinutes) % 1440;
     let bestTarget = null, bestDist = Infinity;
-    document.querySelectorAll('#timebar button').forEach((btn) => {
+    timeBtns.forEach((btn) => {
       const target = +btn.dataset.m % 1440;
       const d = Math.abs(cur - target);
       const circular = Math.min(d, 1440 - d);
       if (circular < bestDist) { bestDist = circular; bestTarget = target; }
     });
-    document.querySelectorAll('#timebar button').forEach((btn) => {
+    timeBtns.forEach((btn) => {
       btn.classList.toggle('on', +btn.dataset.m % 1440 === bestTarget);
     });
   }
-  document.querySelectorAll('#timebar button').forEach((btn) => {
+  timeBtns.forEach((btn) => {
     btn.addEventListener('click', () => { state.envMinutes = +btn.dataset.m % 1440; applyEnv(); persist(); dirty = true; });
   });
   applyEnv();
@@ -931,11 +1000,12 @@ async function boot() {
     const dt = Math.min((now - last) / 1000, 0.08); last = now;
     let adv = true;
     if (document.hidden || reducedMotion) adv = false;
-    if (adv && !document.hidden) {
+    if (adv) {
       simTime += dt;
       state.envMinutes = (state.envMinutes + dt * DATA.environment.minutesPerSecond) % 1440;
+      applyEnv(); // 視覺每幀線性插值，日夜連續
       const shown = Math.floor(state.envMinutes / 10);
-      if (shown !== lastShown) { lastShown = shown; applyEnv(); }
+      if (shown !== lastShown) { lastShown = shown; updateClock(); }
       waterUni.uTime.value = simTime;
       dirty = true;
     }
@@ -947,8 +1017,8 @@ async function boot() {
       if (fly.t >= fly.dur) fly = null;
       dirty = true;
     }
-    if (dirty || controls.enableDamping) {
-      controls.update();
+    const moved = controls.update();
+    if (dirty || moved) {
       try {
         renderer.render(scene, camera);
         labelRenderer.render(scene, camera);
